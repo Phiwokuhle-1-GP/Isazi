@@ -1,0 +1,37 @@
+ISAZI HERBAL SHOP / ECS — CLIENT PORTAL VERSION 4
+====================================================
+
+WHAT'S NEW
+1. Simpler client progress screen: clear status counts, steps needing the client, all delivery steps, and inline comments.
+2. Status PDF at /client/status-report.pdf, generated from the CURRENT local SQLite project state each time it is downloaded. Includes version, timestamps, status, evidence, selected concept and most recent recorded feedback.
+3. Three fully rendered HTML storefront homepages: Botanical Classic, Premium Earth, Clean Modern. Each has a realistic hero, original client-catalogue product photos, navigation, category filters, search, product quick-view and a mock shopping bag. THE MOCK CART DOES NOT PLACE REAL ORDERS OR TAKE PAYMENTS.
+4. Each design can be compared in desktop/mobile preview, opened full screen, and reviewed with versioned official status plus dated client feedback.
+5. Viewer login opens the client progress screen rather than the internal Agile sprint plan. Editors/admins retain full access.
+
+CLIENT URLS (AFTER LOCAL START)
+/client/progress                       Current status and client questions
+/client/status-report.pdf              Download PDF status report
+/client/designs                        Website concept catalogue
+/client/designs/<DESIGN-ID>             Review and comment on a concept
+/client/designs/<DESIGN-ID>/preview     Interactive full-page storefront mock
+/owner                                 ECS owner dashboard (admin only)
+
+GETTING STARTED / EXISTING V3.1 INSTALLATION
+1. Stop the running Flask server (Ctrl+C).
+2. Download and extract the ZIP. Run INSTALL_V4_WINDOWS.ps1 from the extracted package folder.
+   The script backs up your existing instance folder before copying code. It does not replace the database.
+3. In C:\Users\USER\Downloads\isazi_ecs_agile_manager, run:
+      .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+      .\.venv\Scripts\python.exe app.py serve
+4. Refresh the browser and sign in using your existing owner password.
+
+NEW INSTALLATION
+Run the included RUN_WINDOWS.bat inside the installed project directory and follow owner setup.
+
+NOTES
+- No payments, orders, delivery services or domain purchase are performed by this project management portal.
+- Catalogue product descriptions, safety information, actual stock and final prices need Isazi approval.
+- The PDF is a status snapshot, not a contractual completion certificate.
+- The prototype uses private, authenticated preview URLs; do not publish it as a public online shop.
+- Save the generated PDF locally when you need to distribute it. Client comments show timestamp and author.
+- The SQLite instance folder contains your login and existing project version history. Do not delete it.

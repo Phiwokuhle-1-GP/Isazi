@@ -1,0 +1,13 @@
+{# Live HTML/CSS proposals: a working visual preview, not a payment-enabled store. #}
+<div class="concept-preview concept-{{design.theme}} {% if preview_compact %}concept-compact{% endif %}">
+ <div class="concept-banner"><span>ISAZI HERBAL SHOP</span><span>Pure · Traditional · Natural Wellness</span></div>
+ <div class="concept-navbar"><div class="concept-mark"><span class="concept-mark-icon">✦</span> <span>ISAZI<small>HERBAL SHOP</small></span></div><div class="concept-menu"><span>Home</span><span>Shop</span><span>Our Story</span></div><div class="concept-search">Search products <span>⌕</span></div></div>
+ <div class="concept-hero"><div class="concept-copy"><div class="concept-label">NATURAL WELLNESS · SOUTH AFRICA</div><h2>{% if design.theme=='premium' %}Tradition, beautifully reimagined.{% elif design.theme=='modern' %}Your herbal favourites. Simplified.{% else %}Reconnect with nature's wisdom.{% endif %}</h2><p>Explore carefully presented herbal products, clear pricing and easy online shopping.</p><div class="concept-cta">Explore our products <span>↗</span></div></div><div class="concept-photo"><img alt="Herbal product photography from supplied catalogue" src="{{url_for('static',filename='img/design_soursop.jpg')}}"></div></div>
+ <div class="concept-section-title"><strong>{% if design.theme=='premium' %}The collection{% elif design.theme=='modern' %}Shop popular products{% else %}Explore herbal essentials{% endif %}</strong><span>View all products →</span></div>
+ <div class="concept-products">
+  {% for name,price,photo in [('Smolo','R250','smolo'),('Soursop Leaves','R350','soursop'),('Sea Moss','R450','sea_moss'),('Eye Care Solution','R100','eye_care')] %}
+  <div class="concept-product"><div class="concept-product-img"><img src="{{url_for('static',filename='img/design_'+photo+'.jpg')}}" alt="Product sample"></div><strong>{{name}}</strong><small>{{price}}</small><span class="concept-faux-buy">View product</span></div>
+  {% endfor %}
+ </div>
+ <div class="concept-bottom"><span>✓ Product information</span><span>✓ Mobile-friendly shopping</span><span>✓ Secure checkout planned</span></div>
+</div>

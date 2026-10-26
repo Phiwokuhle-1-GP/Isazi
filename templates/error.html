@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block main %}<div class="form-wrap"><section class="panel error-screen"><div class="eyebrow">ERROR {{status}}</div><h1>{{title}}</h1><p>{{message}}</p><a class="btn btn-primary" href="{{url_for('page',page_num=1) if current_user else url_for('login')}}">Return to project</a></section></div>{% endblock %}

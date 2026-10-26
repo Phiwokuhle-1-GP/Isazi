@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block main %}
+<div class="management-header"><div><a class="back-link" href="{{url_for('history')}}">← Version history</a><h1>Compare v{{before.version}} → v{{after.version}}</h1><p>Green additions, red removals; changes are derived from complete project snapshots.</p></div><a class="btn btn-primary" href="{{url_for('history')}}">Done</a></div><section class="panel"><div class="diff-legend"><span class="diff-added">+ Added / changed to</span><span class="diff-removed">− Removed / changed from</span><span>Unchanged context</span></div>{% if diff %}<pre class="diff-view">{% for line in diff %}<span class="{% if line.startswith('+') and not line.startswith('+++') %}added{% elif line.startswith('-') and not line.startswith('---') %}removed{% elif line.startswith('@@') %}diff-heading{% endif %}">{{line}}
+</span>{% endfor %}</pre>{% else %}<p class="empty">No content differences between these versions.</p>{% endif %}</section>
+{% endblock %}

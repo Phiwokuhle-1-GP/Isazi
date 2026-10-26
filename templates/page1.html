@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import note_banner,hero,section_header,actions with context %}
+{% block main %}
+{{ note_banner(1,'') }}
+{{ hero('Agile approach & objectives','A collaborative, iterative delivery framework for Isazi Herbal Shop’s digital commerce platform.',version) }}
+<div class="dash-grid overview-grid">
+<section class="panel intro-panel"><div class="section-head"><div><h2>01 · Introduction to Agile</h2><p>How ECS manages delivery with the client</p></div>{% if has_edit_rights %}<a class="tiny-add no-print" href="{{ url_for('overview_form') }}">Edit overview</a>{% endif %}</div><div class="intro-copy">{{ data.overview.agile_intro }}</div><div class="insight-strip"><strong>Business vision</strong><p>{{ data.overview.vision }}</p></div><div class="mini-label">PLAN → BUILD → TEST → REVIEW → IMPROVE</div></section>
+<section class="panel principle-panel">{{ section_header('02 · Agile principles','principles',version,description='Six habits that guide the ECS–client relationship') }}<div class="principles-list">{% for x in data.principles %}<div class="principle-row"><span class="check-icon">✓</span><div><strong>{{ x.title }}</strong><p>{{ x.detail }}</p></div>{{ actions('principles',x,version) }}</div>{% endfor %}</div></section>
+<section class="panel cycle-panel"><div class="section-head"><div><h2>03 · How the sprint cycle works</h2><p>Deliver value, test, demonstrate and improve every two weeks</p></div></div><div class="sprint-cycle">{% for step,sub,ico in [('Plan','Prioritise backlog','▤'),('Build','Develop features','⚙'),('Test','Verify quality','◎'),('Review','Client demo','◉'),('Improve','Adapt plan','↗')] %}<div class="cycle-stage"><span class="cycle-icon cycle-{{ loop.index }}">{{ ico }}</span><strong>{{ step }}</strong><small>{{ sub }}</small></div>{% if not loop.last %}<span class="stage-arrow">→</span>{% endif %}{% endfor %}</div><div class="cycle-foot">↶&nbsp; REPEAT EVERY SPRINT &nbsp;↺</div><div class="process-note">{{ data.overview.agile_cycle }}</div></section>
+</div>
+<section class="panel objective-panel">{{ section_header('04 · What this project will deliver','objectives',version,description='Proposed measurable outcomes for Phase 1') }}<div class="objective-grid">{% for x in data.objectives %}<article class="objective"><div class="object-number">{{ '%02d'|format(loop.index) }}</div><strong>{{ x.title }}</strong><p>{{ x.detail }}</p>{{ actions('objectives',x,version) }}</article>{% endfor %}</div></section>
+<div class="bottom-note"><span>DECISION NEEDED: Agree MVP scope and nominated client approver.</span><span>Client discussion draft — not a statement of completion.</span></div>
+{% endblock %}

@@ -1,0 +1,3 @@
+# Optional reference only; GitHub .gitignore already excludes these files.
+instance/*.sqlite3
+.env

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="description" content="Isazi Herbal Shop client Agile project plan managed by ECS">
+ <title>{{ title }} — Isazi Agile Studio</title>
+ <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+ <script src="{{ url_for('static',filename='app.js') }}" defer></script>
+</head>
+<body>
+{% if current_user %}
+<header class="topbar no-print">
+  <a class="brand" href="{{ url_for('owner_dashboard') if current_user.role == 'admin' else url_for('client_progress') }}"><span class="brand-icon">✳</span><span>ISAZI <small>AGILE STUDIO</small></span></a>
+  {% if current_user.role in ('admin','editor') %}<nav class="global-nav" aria-label="Agile project navigation">{% for n,label in page_titles.items() %}<a href="{{ url_for('page',page_num=n) }}" class="{% if page_num == n %}active{% endif %}"><span class="nav-num">{{ n }}</span> {{ label }}</a>{% endfor %}</nav>{% else %}<nav class="global-nav client-simple-nav" aria-label="Client navigation"><a href="{{url_for('client_progress')}}">Project progress</a><a href="{{url_for('design_catalogue')}}">Website concepts</a><a href="{{url_for('client_scope')}}">Project scope</a><a href="{{url_for('download_status_pdf')}}">Download status PDF</a></nav>{% endif %}
+  <div class="user-tools">{% if current_user.role in ('admin','editor') %}<a href="{{url_for('client_progress')}}" class="plain-link">✓ Client view</a><a href="{{url_for('design_catalogue')}}" class="plain-link">◈ Concepts</a><a href="{{url_for('client_scope')}}" class="plain-link">Project scope</a>{% endif %}{% if current_user.role == 'admin' %}<a href="{{ url_for('owner_dashboard') }}" class="plain-link">Owner home</a>{% endif %}<a href="{{ url_for('change_password') }}" class="plain-link">Security</a>{% if current_user.role in ('admin','editor') %}<a href="{{ url_for('history') }}" class="plain-link">⟲ History</a>{% endif %}{% if current_user.role == 'admin' %}<a href="{{ url_for('users') }}" class="plain-link">Accounts</a>{% endif %}<span class="user-pill">{{ current_user.username }} · {{ current_user.role }}</span><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="logout">Sign out</button></form></div>
+</header>
+{% endif %}
+<div class="toast-area no-print">{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}</div>
+<main class="app-container {% if not current_user %}guest{% endif %}">
+{% block main %}{% endblock %}
+</main>
+{% if current_user %}<footer class="site-footer no-print"><span>ISAZI HERBAL SHOP / Executive Communication Services (ECS)</span><span>Confidential client discussion draft · Change-controlled project workspace</span></footer>{% endif %}
+</body></html>

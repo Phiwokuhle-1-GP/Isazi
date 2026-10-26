@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block main %}
+<section class="coming-shell">
+  <header class="coming-header"><a class="coming-logo" href="{{ url_for('index') }}"><span class="coming-leaf">✳</span><span>ISAZI <small>HERBAL SHOP</small></span></a><a class="coming-access" href="{{url_for('login')}}">Owner &amp; team sign in →</a></header>
+  <div class="coming-hero">
+    <div class="coming-message">
+      <span class="coming-eyebrow">PURE · TRADITIONAL · NATURAL WELLNESS</span>
+      <span class="coming-status"><span class="status-dot"></span> Website in development</span>
+      <h1>Something natural<br><em>is growing.</em></h1>
+      <p>We're preparing a new home for Isazi Herbal Shop, where you'll be able to explore our herbal product range and enjoy a simpler shopping experience.</p>
+      <div class="coming-points"><span>✳ Product catalogue</span><span>✳ Convenient ordering</span><span>✳ Secure checkout planned</span></div>
+      <a href="{{url_for('login')}}" class="coming-primary">Owner / ECS project login <span>↗</span></a>
+      <p class="coming-disclaimer">The online shop and payments are not yet available. Product information will be reviewed before launch.</p>
+    </div>
+    <div class="coming-visual"><img src="{{url_for('static', filename='img/coming_soon_hero.jpg')}}" alt="Herbal products and a preview of a future online shop dashboard"><div class="visual-note"><span>ISAZI</span><strong>Website under construction</strong><small>Designed for everyday wellness and convenient shopping</small></div></div>
+  </div>
+  <div class="coming-bottom"><div><span class="section-kicker">WHAT'S AHEAD</span><h2>Building the experience, one step at a time.</h2></div><div class="coming-steps"><div><span class="steps-num">01</span><strong>Plan &amp; design</strong><small>Project requirements and visual concepts</small></div><div><span class="steps-num">02</span><strong>Develop &amp; test</strong><small>Storefront, accounts and payments</small></div><div><span class="steps-num">03</span><strong>Review &amp; launch</strong><small>Client approval before going live</small></div></div></div>
+  <footer class="coming-footer"><span>© ISAZI Herbal Shop · Coming soon</span><span>Project delivery: Executive Communication Services (ECS)</span></footer>
+</section>
+{% endblock %}

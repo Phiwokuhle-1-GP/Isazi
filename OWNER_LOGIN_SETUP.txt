@@ -1,0 +1,32 @@
+ISAZI HERBAL SHOP — OWNER PORTAL LOGIN SETUP
+=============================================
+
+This package has no preset password. Never share or commit your actual password.
+
+1) On Windows, extract the ZIP and run RUN_WINDOWS.bat.
+2) If installing for the first time, enter a private password of at least 12 characters twice.
+3) Visit http://127.0.0.1:5000/
+4) Click "Owner & team sign in", or open http://127.0.0.1:5000/login
+
+INITIAL OWNER LOGIN
+Username: owner
+Password: the private password you chose on first launch
+Owner dashboard: http://127.0.0.1:5000/owner
+
+TO CHANGE YOUR PASSWORD
+Sign in > Security > Change password. After the change, sign in again.
+
+FORGOT PASSWORD — LOCAL ADMINISTRATOR RESET
+Open PowerShell in the project folder, stop the server, then run:
+  .\.venv\Scripts\python.exe app.py reset-password --username owner
+
+EXISTING INSTALLATIONS
+If you already created a login with the older Agile Studio, your username may be "admin".
+Your existing admin account still signs in and has owner access. Do not delete instance/isazi.sqlite3.
+Back up the existing instance/ folder before replacing files.
+
+SECURITY
+- Only the under-construction landing page is public.
+- The owner dashboard, editable project plan and history require login.
+- Customer checkout, payment processing and actual product/order records do not exist yet.
+- Do not expose the Flask development server to the internet.

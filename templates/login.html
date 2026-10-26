@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block main %}
+<div class="secure-shell">
+ <div class="secure-feature">
+  <a href="{{url_for('index')}}" class="secure-back">← Public website</a>
+  <span class="secure-kicker">ISAZI HERBAL SHOP × ECS</span>
+  <h1>One secure workspace.<br><em>Built to grow with your shop.</em></h1>
+  <p>Manage today's Agile project plan. The same protected owner entry point is designed to evolve into your e-commerce administration portal.</p>
+  <div class="secure-modules"><span>✓ Project management</span><span>◌ Store management (planned)</span><span>◌ Orders &amp; stock (planned)</span><span>◌ Agents &amp; reports (planned)</span></div>
+  <div class="secure-footnote">Access is limited to authorised Isazi and ECS team members.</div>
+ </div>
+ <form class="secure-card" method="post" action="{{url_for('login')}}">
+  <input type="hidden" name="csrf_token" value="{{csrf_token()}}">
+  <div class="secure-monogram">✳</div>
+  <div class="secure-overline">OWNER &amp; PROJECT PORTAL</div>
+  <h2>Welcome back</h2>
+  <p>Sign in to continue to your workspace.</p>
+  <div class="field"><label for="username">Username</label><input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="owner" required autofocus></div>
+  <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required></div>
+  <button type="submit" class="secure-button">Sign in securely →</button>
+  <div class="secure-hint">First installation: use the Windows launcher to create the <strong>owner</strong> account and choose your own password. No default password is supplied.</div>
+  <div class="secure-help">Forgot your password? The local system administrator can reset it using <code>python app.py reset-password --username owner</code>.</div>
+ </form>
+</div>
+{% endblock %}
