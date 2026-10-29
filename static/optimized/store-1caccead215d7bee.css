@@ -386,3 +386,34 @@ header{background:#fff;border-bottom:1px solid var(--line)}
 
 /* Start the phone homepage directly with the hero below the header. */
 @media(max-width:760px){.scroll-home .category-band{display:none}.scroll-home .hero-authentic{margin-top:14px}}
+
+/* Mobile opens with Dr Ntuli; desktop keeps its existing homepage sequence. */
+@media(max-width:760px){
+ .scroll-home .hero-authentic,.scroll-home .category-band{display:none}
+ .scroll-home .scroll-content{display:flex;flex-direction:column;padding-top:14px}
+ .scroll-home .scroll-content>section,.scroll-home .scroll-content>div{min-width:0}
+ .scroll-home .scroll-content>.about-band{order:-1;display:grid;grid-template-columns:minmax(0,1fr);padding:20px;gap:20px;margin:0 0 24px;border-radius:8px}
+ .scroll-home .about-band h2{font-size:28px;line-height:1.15;margin:8px 0 12px}
+ .scroll-home .about-band h3{font-size:17px;line-height:1.3}
+ .scroll-home .about-band p{font-size:14px;line-height:1.5}
+ .scroll-home .about-band .button{min-height:44px;font-size:13px}
+ .scroll-home .about-band .why{grid-column:auto}
+ .service-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;padding:8px 12px;margin-top:20px;margin-bottom:20px;border-radius:9px}
+ .service-strip>div{padding:12px 8px;border:0;min-width:0;gap:5px}
+ .service-strip>div:last-child:nth-child(odd){grid-column:1/-1;border-top:1px solid var(--line)}
+ .service-strip b{font-size:11px;line-height:1.4}.service-strip span{font-size:12px;line-height:1.45}
+ footer{padding:28px 0 20px}
+ footer .footer-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:20px;row-gap:22px;text-align:left}
+ .footer-grid>div{min-width:0}
+ .footer-grid>div:first-child{grid-column:1/-1;padding-bottom:18px;border-bottom:1px solid #ffffff26}
+ .footer-grid h3{font-size:19px;line-height:1.3;margin:0 0 8px}
+ .footer-grid h4{font-size:14px;line-height:1.3;margin:0 0 8px;color:#fff}
+ .footer-grid p{font-size:12px;line-height:1.6;margin:0 0 10px;overflow-wrap:anywhere}
+ .footer-grid a{display:flex;align-items:center;font-size:13px;line-height:1.4;min-height:44px;padding:8px 0;overflow-wrap:anywhere}
+ .footer-grid>div:last-child{grid-column:1/-1;padding-top:18px;border-top:1px solid #ffffff26}
+ .footer-grid>div:last-child>a{font-size:16px;font-weight:700;width:fit-content}
+ .footer-grid .footer-socials{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 14px}
+ .footer-grid .social-icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;padding:0;flex:0 0 44px}
+ .footer-grid small{display:block;font-size:11px;line-height:1.5;margin-top:8px;color:#c5d6cc}
+ footer .disclaimer{font-size:11px;line-height:1.65;margin-top:20px;margin-bottom:0;padding-top:16px;border-top:1px solid #ffffff26}
+}
