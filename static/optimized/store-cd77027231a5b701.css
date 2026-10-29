@@ -446,3 +446,14 @@ header{background:#fff;border-bottom:1px solid var(--line)}
  .footer-grid>div:last-child>.footer-socials{grid-column:1/-1;grid-row:4;padding-top:14px;border-top:1px solid #ffffff26;margin:0;gap:10px}
  .footer-grid>div:last-child>small{grid-column:1/-1;grid-row:5;margin:0}
 }
+
+/* Give the collection photograph its own rounded, inset frame at every size. */
+.scroll-home .promos>.promo-demo:first-child{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:center;gap:20px;padding:20px;border-radius:16px;overflow:hidden;min-height:230px}
+.scroll-home .promos>.promo-demo:first-child>div{padding:0;min-width:0}
+.scroll-home .promos>.promo-demo:first-child>img{display:block;width:100%;max-width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;object-position:center;border-radius:12px;align-self:center;min-width:0;background:#154b28}
+@media(max-width:760px){
+ .scroll-home .promos>.promo-demo:first-child{gap:12px;padding:16px;border-radius:14px;min-height:220px}
+ .scroll-home .promos>.promo-demo:first-child>img{aspect-ratio:1/1;border-radius:10px}
+ .scroll-home .promos>.promo-demo:first-child .eyebrow{font-size:10px;padding:6px 7px}
+ .scroll-home .promos>.promo-demo:first-child h2{font-size:clamp(17px,4.7vw,24px);line-height:1.2;overflow-wrap:normal}
+}
