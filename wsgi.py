@@ -1,4 +1,2 @@
-"""Render/WSGI entrypoint for Isazi Client Portal."""
-from app import create_app
-
-app = create_app()
+"""Compatibility entry point for the existing Isazi host."""
+from app import app

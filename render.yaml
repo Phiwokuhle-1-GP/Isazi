@@ -1,28 +1,25 @@
-# Isazi Herbal Shop – secure client portal and owner dashboard.
-# Uses a PAID web-service plan and persistent disk because SQLite stores
-# user accounts, client feedback and project version history.
 services:
   - type: web
     name: isazi-herbal-shop-client-portal
     runtime: python
-    plan: 0.5c-512mb
     region: frankfurt
+    plan: starter
     buildCommand: pip install -r requirements.txt
     startCommand: bash render_start.sh
     healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.10
-      - key: ISAZI_SECRET_KEY
+      - key: DEMO_PAYMENTS_ENABLED
+        value: "1"
+      - key: ISAZI_CLIENT_DEMO
+        value: "0"
+      - key: PAYFAST_ENABLED
+        value: "0"
+      - key: SECRET_KEY
         generateValue: true
-      - key: ISAZI_DB_PATH
-        value: /var/data/isazi.sqlite3
-      - key: ISAZI_HTTPS
-        value: '1'
-      # Enter privately during first Blueprint setup; remove from Render
-      # environment AFTER the owner account is created successfully.
-      - key: ISAZI_BOOTSTRAP_OWNER_PASSWORD
-        sync: false
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: DATA_DIR
+        value: /var/data
     disk:
       name: isazi-data
       mountPath: /var/data

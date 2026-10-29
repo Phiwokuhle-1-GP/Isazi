@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Database lives on Render's attached persistent disk, configured in render.yaml.
-python deploy_bootstrap.py
-# Do not pass the setup password to the live web server process.
+# Compatibility with the existing Isazi Render service startup command.
+export DATA_DIR="${DATA_DIR:-/var/data}"
+export SECRET_KEY="${SECRET_KEY:-${ISAZI_SECRET_KEY:-}}"
+export COOKIE_SECURE="${COOKIE_SECURE:-${ISAZI_HTTPS:-1}}"
+export ISAZI_CLIENT_DEMO=0
+export DEMO_PAYMENTS_ENABLED="${DEMO_PAYMENTS_ENABLED:-1}"
 unset ISAZI_BOOTSTRAP_OWNER_PASSWORD || true
-exec waitress-serve --host=0.0.0.0 --port="${PORT:-10000}" wsgi:app
+exec gunicorn --workers 1 --threads 4 --timeout 120 --bind "0.0.0.0:${PORT:-10000}" app:app

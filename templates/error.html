@@ -1,2 +1,1 @@
-{% extends 'base.html' %}
-{% block main %}<div class="form-wrap"><section class="panel error-screen"><div class="eyebrow">ERROR {{status}}</div><h1>{{title}}</h1><p>{{message}}</p><a class="btn btn-primary" href="{{url_for('page',page_num=1) if current_user else url_for('login')}}">Return to project</a></section></div>{% endblock %}
+{% extends 'base.html' %}{% block content %}<div class="empty"><h1>{{ error.code }}</h1><p>{{ error.description }}</p><a class="button" href="{{ url_for('home') }}">Back to Home →</a></div>{% endblock %}

@@ -1,652 +1,782 @@
-"""Isazi Agile Studio — client-facing editable Agile plan with audit snapshots."""
-from __future__ import annotations
-
-import argparse
+"""Isazi Herbal Shop — Flask storefront with SQLite and manual order confirmation."""
 import csv
-import difflib
-import getpass
+import functools
 import io
-import json
 import os
+import re
 import secrets
 import sqlite3
 import time
-from datetime import datetime, timezone
-from functools import wraps
+from urllib.parse import urlsplit
+from datetime import timedelta
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-from flask import Flask, abort, flash, g, jsonify, redirect, render_template, request, send_file, session, url_for
+import click
+from flask import Flask, abort, flash, g, redirect, render_template, request, send_from_directory, session, url_for, Response
 from werkzeug.security import check_password_hash, generate_password_hash
+from PIL import Image, UnidentifiedImageError
+from ecosystem import register_ecosystem, valid_email
+from client_demo import register_client_demo
 
-from state import CHOICES, OVERVIEW_FIELDS, SCHEMA, COMMERCIAL_SCOPE_FIELDS, SCOPE_STATUS, default_commercial_scope, ConflictError, Store, ValidationError, completion, feedback_list, add_feedback
-from status_report import build_status_pdf
-
-BASE_DIR = Path(__file__).resolve().parent
-TITLES = {
-    1: "Agile approach & objectives",
-    2: "Stakeholders & solution scope",
-    3: "Sprints & delivery roadmap",
-    4: "Stories, journeys & performance",
+APP_VERSION = '2.6.4'
+ROOT = Path(__file__).resolve().parent
+CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
+SEEDS = [
+ ('Smolo Body Cured System', 'General Health', 20000, 'product-1.webp'),
+ ('Ukhlanza Isibindi', 'Digestive Health', 35000, 'product-2.webp'),
+ ('Mashamba Mix', 'General Health', 18000, 'product-3.webp'),
+ ('Isazi Immune Booster', 'Immune Support', 18000, 'product-4.webp'),
+ ('Isazi Cleanse Mix', 'Digestive Health', 10000, 'product-5.webp'),
+ ('Herbal Combo Pack', 'General Health', 55000, 'combo.webp'),
+]
+VIDEO_SEEDS = [('story', 'Our Story', 'story-video-placeholder.png')] + [('testimonial', f'Customer testimony {n}', f'testimony-audio-cover-{n}.png') for n in range(1,5)]
+HOME_IMAGE_SLOTS = {
+ 'shop_banner': ('Shop banner photograph', 'demo-botanicals.webp', 2400, 800, 'Text-free botanical landscape. Heading is live HTML.'),
+ 'contact_banner': ('Contact banner photograph', 'demo-article-2.webp', 2400, 800, 'Text-free botanical landscape.'),
+ 'hero': ('Desktop hero', 'hero-natural-meadow.webp', 2400, 800, 'Text-free landscape. Keep faces and important details inside the central 600 px vertically.'),
+ 'hero_mobile': ('Mobile hero (optional)', '', 1200, 1600, 'Portrait artwork. If unset, the desktop hero is used.'),
+ 'brand_mark': ('Brand crest (optional)', '', 512, 512, 'Square transparent PNG/WebP crest. The shop name remains sharp live text.'),
+ 'combo': ('Combo pack photograph', 'demo-combo.webp', 1500, 1000, 'Three-product photograph, no promotional text baked into the image.'),
+ 'promo_cleanse': ('Cleanse promotion photograph', 'demo-product-5.webp', 1500, 1000, 'Product photograph only. Banner copy and buttons remain live HTML.'),
+ 'promo_immune': ('Herbal collection promotion photograph', 'demo-product-4.webp', 1500, 1000, 'Product photograph only. Keep the whole bottle inside the frame.'),
+ 'article_1': ('Article 1 cover', 'demo-botanicals.webp', 1200, 800, 'Landscape botanical photograph.'),
+ 'article_2': ('Article 2 cover', 'demo-article-2.webp', 1200, 800, 'Landscape botanical photograph.'),
+ 'article_3': ('Article 3 cover', 'demo-article-3.webp', 1200, 800, 'Landscape botanical photograph.'),
+ 'article_4': ('Article 4 cover', 'demo-article-4.webp', 1200, 800, 'Landscape botanical photograph.'),
 }
-COLLECTION_NAMES = {
-    "client_steps": "Client progress tracker", "designs": "Design catalogue",
-    "principles": "Agile principles", "objectives": "Project objectives", "stakeholders": "Stakeholders",
-    "scope_in": "In scope", "scope_out": "Out of scope", "systems": "Solution components",
-    "sprints": "Sprints", "milestones": "Project milestones", "stories": "User stories",
-    "journeys": "User journeys", "kpis": "KPIs", "risks": "Project risks", "next_steps": "Next actions",
+DEMO_REPLACEMENTS = {
+ **{f'product-{n}.webp': f'demo-product-{n}.webp' for n in range(1, 6)},
+ **{f'testimonial-{n}.webp': f'testimony-audio-cover-{n}.png' for n in range(1, 5)},
+ **{f'demo-testimonial-{n}.webp': f'testimony-audio-cover-{n}.png' for n in range(1,5)},
+ 'combo.webp': 'demo-combo.webp', 'founder.webp': 'story-video-placeholder.png', 'story-scroll.webp': 'story-video-placeholder.png', 'demo-story.webp': 'story-video-placeholder.png', 'story-original-placeholder.svg': 'story-video-placeholder.png',
+ **{f'article-{n}.webp': ('demo-botanicals.webp' if n == 1 else f'demo-article-{n}.webp') for n in range(1, 5)},
 }
-
+SCHEMA = '''
+CREATE TABLE IF NOT EXISTS home_images (
+ key TEXT PRIMARY KEY, filename TEXT NOT NULL, width INTEGER NOT NULL DEFAULT 0, height INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS videos (
+ id INTEGER PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, person TEXT NOT NULL DEFAULT '',
+ caption TEXT NOT NULL DEFAULT '', video_source TEXT NOT NULL DEFAULT '', audio_source TEXT NOT NULL DEFAULT '', poster TEXT NOT NULL,
+ active INTEGER NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS products (
+ id INTEGER PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, price INTEGER NOT NULL CHECK(price>=0),
+ description TEXT NOT NULL, image TEXT NOT NULL, stock INTEGER NOT NULL DEFAULT 0 CHECK(stock>=0), active INTEGER NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS admins (id INTEGER PRIMARY KEY CHECK(id=1), password_hash TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS login_attempts (ip TEXT PRIMARY KEY, failures INTEGER NOT NULL, locked_until REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS orders (
+ id INTEGER PRIMARY KEY, token TEXT UNIQUE NOT NULL, checkout_key TEXT UNIQUE NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')),
+ name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, fulfillment TEXT NOT NULL, address TEXT NOT NULL,
+ notes TEXT NOT NULL, subtotal INTEGER NOT NULL, shipping INTEGER NOT NULL, total INTEGER NOT NULL,
+ status TEXT NOT NULL DEFAULT 'Awaiting confirmation');
+CREATE TABLE IF NOT EXISTS order_items (
+ id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL REFERENCES orders(id), product_id INTEGER NOT NULL,
+ name TEXT NOT NULL, quantity INTEGER NOT NULL CHECK(quantity>0), unit_price INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS enquiries (
+ id INTEGER PRIMARY KEY, created_at TEXT NOT NULL DEFAULT (datetime('now')), name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL);
+'''
+DEFAULTS = {
+ 'social_facebook': '', 'social_instagram': '', 'social_tiktok': '', 'social_youtube': '',
+ 'email': '', 'business_hours': 'Mon–Fri: 08:00–17:00\nSat: 09:00–13:00',
+ 'phone': '060 585 7817', 'location': 'Randburg, Johannesburg',
+ 'about': 'Discover Isazi Herbal Shop and our range of traditional herbal products. Contact our team for product information, ingredients and directions before purchasing.',
+ 'story_video': '', 'payment_instructions': 'Your order is reserved for review. Our team will contact you to confirm availability, delivery and payment details. No online payment has been taken.',
+ 'delivery_note': 'Free local delivery in Randburg on orders over R600. A R50 local delivery fee applies to orders of R600 or less. Collection is free; the collection address is confirmed by our team.',
+ 'policy': 'Contact us promptly about an incorrect, damaged or unwanted order. Returns and refunds are handled in accordance with applicable consumer rights. Keep your order reference and proof of purchase.',
+}
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_path=str(BASE_DIR / "instance"), instance_relative_config=True)
-    app.instance_path and Path(app.instance_path).mkdir(exist_ok=True, parents=True)
-    secret_file = Path(app.instance_path) / ".secret-key"
-    if os.environ.get("ISAZI_SECRET_KEY"):
-        secret = os.environ["ISAZI_SECRET_KEY"]
-    else:
-        if not secret_file.exists():
-            secret_file.write_text(secrets.token_urlsafe(48), encoding="utf-8")
-            try:
-                os.chmod(secret_file, 0o600)
-            except OSError:
-                pass
-        secret = secret_file.read_text(encoding="utf-8").strip()
-    app.config.update(
-        SECRET_KEY=secret,
-        DATABASE=os.environ.get("ISAZI_DB_PATH", str(Path(app.instance_path) / "isazi.sqlite3")),
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_SECURE=os.environ.get("ISAZI_HTTPS", "0") == "1",
-        PERMANENT_SESSION_LIFETIME=__import__("datetime").timedelta(hours=8),
-        MAX_CONTENT_LENGTH=2 * 1024 * 1024,
-    )
+    app = Flask(__name__)
+    demo_requested = os.environ.get('ISAZI_CLIENT_DEMO') == '1'
+    data_dir = ROOT / 'instance-client-demo' if demo_requested else Path(os.environ.get('DATA_DIR', ROOT / 'instance'))
+    data_dir.mkdir(parents=True, exist_ok=True)
+    app.config.update(DATABASE=str(data_dir / 'shop.sqlite3'), UPLOAD_DIR=str(data_dir / 'uploads'),
+                      MAX_CONTENT_LENGTH=112 * 1024 * 1024, SESSION_COOKIE_HTTPONLY=True,
+                      SESSION_COOKIE_SAMESITE='Lax', SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE') == '1',
+                      PERMANENT_SESSION_LIFETIME=timedelta(hours=2), TESTING=False, DEMO_MODE=demo_requested, DEMO_PAYMENTS_ENABLED=os.environ.get('DEMO_PAYMENTS_ENABLED')=='1')
     if test_config:
         app.config.update(test_config)
-    store = Store(app.config["DATABASE"])
-    store.initialize()
-    app.extensions["isazi_store"] = store
+    if app.config.get('DEMO_MODE'):
+        if not demo_requested and not app.testing:
+            raise RuntimeError('Start client-demo mode with START_DEMO_WINDOWS.ps1 so its data is isolated.')
+        if Path(app.config['DATABASE']).resolve() == (ROOT/'instance'/'shop.sqlite3').resolve():
+            raise RuntimeError('Demo mode cannot use the normal store database.')
+        app.config.update(PAYFAST_ENABLED='0', SMTP_HOST='', PUBLIC_BASE_URL='', SESSION_COOKIE_NAME='isazi_client_demo', SESSION_COOKIE_SECURE=False)
+    if app.config.get('DEMO_PAYMENTS_ENABLED'):
+        app.config.update(PAYFAST_ENABLED='0', SMTP_HOST='')
+    Path(app.config['UPLOAD_DIR']).mkdir(parents=True, exist_ok=True)
+    secret = os.environ.get('SECRET_KEY')
+    if not secret:
+        key_path = data_dir / '.session-key'
+        try:
+            fd = os.open(key_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            with os.fdopen(fd, 'w') as handle:
+                handle.write(secrets.token_hex(32))
+        except FileExistsError:
+            pass
+        secret = key_path.read_text().strip()
+    app.secret_key = secret
+
+    def db():
+        if 'db' not in g:
+            g.db = sqlite3.connect(app.config['DATABASE'], timeout=15)
+            g.db.row_factory = sqlite3.Row
+            g.db.execute('PRAGMA foreign_keys=ON')
+        return g.db
+
+    @app.teardown_appcontext
+    def close_db(error):
+        connection = g.pop('db', None)
+        if connection:
+            connection.close()
+
+    def settings():
+        return dict(db().execute('SELECT key,value FROM settings').fetchall())
+
+    def csrf():
+        if 'csrf' not in session:
+            session['csrf'] = secrets.token_hex(32)
+        return session['csrf']
 
     @app.before_request
-    def load_user():
-        g.user = None
-        uid = session.get("user_id")
-        if uid:
-            with store.connect() as conn:
-                row = conn.execute("SELECT id,username,role,enabled FROM users WHERE id=?", (uid,)).fetchone()
-            if row and row["enabled"]:
-                g.user = dict(row)
-            else:
-                session.clear()
-        if "csrf" not in session:
-            session["csrf"] = secrets.token_urlsafe(32)
+    def protect():
+        if request.method == 'POST' and request.endpoint != 'eco.payfast_itn':
+            supplied = request.form.get('csrf_token', '')
+            if not supplied or not secrets.compare_digest(supplied, session.get('csrf', '')):
+                abort(400, 'The form expired. Reload the page and try again.')
 
     @app.after_request
-    def set_headers(response):
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Referrer-Policy"] = "same-origin"
-        # Only authenticated, same-origin mock storefront frames may be embedded in the client review page.
-        preview = request.endpoint == "storefront_preview"
-        response.headers["X-Frame-Options"] = "SAMEORIGIN" if preview else "DENY"
-        ancestor = "'self'" if preview else "'none'"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors " + ancestor
-        if g.get("user"):
-            response.headers["Cache-Control"] = "no-store"
+    def headers(response):
+        response.headers['X-Isazi-Version'] = APP_VERSION
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; media-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://sandbox.payfast.co.za https://www.payfast.co.za"
+        if request.endpoint and (request.endpoint.startswith(('owner','eco.')) or request.endpoint in ('cart', 'checkout', 'confirmation', 'login')):
+            response.headers['Cache-Control'] = 'no-store'
+            response.headers['X-Robots-Tag'] = 'noindex, nofollow'
         return response
+
+    def admin_only(fn):
+        @functools.wraps(fn)
+        def wrapped(*args, **kwargs):
+            if not session.get('admin'):
+                return redirect(url_for('login'))
+            return fn(*args, **kwargs)
+        return wrapped
+
+    def image_url(name):
+        name = DEMO_REPLACEMENTS.get(name, name)
+        return url_for('uploaded', filename=name) if name.startswith('upload-') else url_for('static', filename='images/' + name)
+
+    @app.template_filter('money')
+    def money(cents):
+        return f'R{cents / 100:,.2f}'
+
+    def video_url(source):
+        return url_for('uploaded', filename=source) if source.startswith('upload-') else source
 
     @app.context_processor
     def context():
-        return {"csrf_token": lambda: session.get("csrf", ""), "collection_names": COLLECTION_NAMES,
-                "page_titles": TITLES, "current_user": g.get("user"), "has_edit_rights": bool(g.get("user") and g.user["role"] in ("editor", "admin"))}
+        return dict(app_version=APP_VERSION, home_images=dict(db().execute('SELECT key,filename FROM home_images').fetchall()), settings=settings(), categories=CATEGORIES, csrf_token=csrf, image_url=image_url,
+                    video_url=video_url, cart_count=sum(session.get('cart', {}).values()))
 
-    def csrf_check():
-        if not secrets.compare_digest(request.form.get("csrf_token", ""), session.get("csrf", "")):
-            abort(403, "Session token expired. Reload the page and try again.")
+    def get_product(product_id, active=True):
+        row = db().execute('SELECT * FROM products WHERE id=?' + (' AND active=1' if active else ''), (product_id,)).fetchone()
+        if not row:
+            abort(404)
+        return row
 
-    def logged_in(view):
-        @wraps(view)
-        def wrapped(*args, **kwargs):
-            if not g.user:
-                return redirect(url_for("login", next=request.path))
-            return view(*args, **kwargs)
-        return wrapped
+    def cart_lines():
+        lines = []
+        for key, qty in session.get('cart', {}).items():
+            product = db().execute('SELECT * FROM products WHERE id=? AND active=1', (key,)).fetchone()
+            if product:
+                lines.append(dict(product=product, quantity=qty, total=qty * product['price']))
+        return lines
 
-    def editor(view):
-        @wraps(view)
-        @logged_in
-        def wrapped(*args, **kwargs):
-            if g.user["role"] not in ("editor", "admin"):
-                abort(403, "This account has view-only access.")
-            return view(*args, **kwargs)
-        return wrapped
+    def bounded_int(raw, low=1, high=99):
+        try:
+            value = int(raw)
+            if not low <= value <= high:
+                raise ValueError
+            return value
+        except (TypeError, ValueError):
+            abort(400, 'Please enter a valid quantity.')
 
-    def admin(view):
-        @wraps(view)
-        @logged_in
-        def wrapped(*args, **kwargs):
-            if g.user["role"] != "admin":
-                abort(403, "Admin access is required.")
-            return view(*args, **kwargs)
-        return wrapped
+    @app.route('/')
+    def home():
+        products = db().execute('SELECT * FROM products WHERE active=1 ORDER BY id LIMIT 5').fetchall()
+        story = db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id LIMIT 1").fetchone()
+        testimonials = db().execute("SELECT * FROM videos WHERE kind='testimonial' AND active=1 ORDER BY id").fetchall()
+        return render_template('home.html', products=products, story=story, testimonials=testimonials, title='Traditional herbal wellness')
 
-    @app.get("/")
-    def index():
-        # Public placeholder only; plan, account records and owner workspace stay private.
-        return render_template("coming_soon.html", title="Website under construction")
+    @app.route('/shop')
+    def shop():
+        query = request.args.get('q', '').strip()[:100]
+        category = request.args.get('category', '')
+        sql, args = 'SELECT * FROM products WHERE active=1', []
+        if query:
+            sql += ' AND (name LIKE ? OR description LIKE ?)'
+            args += ['%' + query + '%'] * 2
+        if category:
+            sql += ' AND category=?'
+            args.append(category)
+        sql += {'price-low': ' ORDER BY price,id', 'price-high': ' ORDER BY price DESC,id', 'name': ' ORDER BY name'}.get(request.args.get('sort'), ' ORDER BY id')
+        category_counts={row['category']:row['count'] for row in db().execute('SELECT category,COUNT(*) AS count FROM products WHERE active=1 GROUP BY category')}
+        ratings={row['product_id']:row for row in db().execute("SELECT product_id,COUNT(*) AS count,AVG(rating) AS average FROM product_reviews WHERE status='Published' GROUP BY product_id")}
+        return render_template('shop.html', products=db().execute(sql, args).fetchall(), query=query, category=category,category_counts=category_counts,all_count=sum(category_counts.values()),rating_summaries=ratings,title='Shop herbal products')
 
-    @app.get("/owner")
-    @admin
-    def owner_dashboard():
-        version, data = store.current()
-        stories = data.get("stories", [])
-        sprints = data.get("sprints", [])
-        completed = sum(1 for item in stories if item.get("status") == "Done")
-        in_progress = sum(1 for item in stories if item.get("status") in ("In progress", "In review"))
-        return render_template("owner.html", title="Owner dashboard", version=version,
-            story_count=len(stories), completed=completed, in_progress=in_progress,
-            sprint_count=len(sprints), plan=data,
-            client_steps=data.get("client_steps", []), designs=data.get("designs", []), commercial_scope=data.get("commercial_scope", default_commercial_scope()))
+    @app.route('/product/<int:product_id>')
+    def product(product_id):
+        p = get_product(product_id)
+        return render_template('product.html', product=p, title=p['name'],**eco['product_context'](p['id']))
 
-    @app.route("/account/password", methods=["GET", "POST"])
-    @logged_in
-    def change_password():
-        if request.method == "POST":
-            csrf_check()
-            old = request.form.get("current_password", "")
-            new = request.form.get("new_password", "")
-            confirm = request.form.get("confirm_password", "")
-            with store.connect() as conn:
-                user = conn.execute("SELECT password_hash FROM users WHERE id=?", (g.user["id"],)).fetchone()
-            if not user or not check_password_hash(user["password_hash"], old):
-                flash("Current password is incorrect.", "error")
-            elif len(new) < 12 or new != confirm:
-                flash("New password must be at least 12 characters and match confirmation.", "error")
-            elif new == old:
-                flash("Choose a different password.", "error")
+    @app.post('/cart/add/<int:product_id>')
+    def cart_add(product_id):
+        p = get_product(product_id)
+        qty = bounded_int(request.form.get('quantity', '1'))
+        cart = dict(session.get('cart', {}))
+        new_qty = cart.get(str(product_id), 0) + qty
+        if new_qty > min(p['stock'], 99):
+            flash('The requested quantity is not available.', 'error')
+        else:
+            if app.config.get('DEMO_MODE'):
+                demo['ensure_customer']()
+            cart[str(product_id)] = new_qty
+            session['cart'] = cart
+            flash(p['name'] + ' added to your cart.', 'success')
+        return redirect(url_for('cart'))
+
+    @app.post('/cart/remove/<int:product_id>')
+    def cart_remove(product_id):
+        cart = dict(session.get('cart', {}))
+        cart.pop(str(product_id), None)
+        session['cart'] = cart
+        return redirect(url_for('cart'))
+
+    @app.route('/cart')
+    def cart():
+        lines = cart_lines()
+        subtotal=sum(x['total'] for x in lines)
+        return render_template('cart.html', lines=lines, subtotal=subtotal, title='Your cart',**eco['cart_promotion'](subtotal))
+
+    @app.post('/cart/update/<int:product_id>')
+    def cart_update(product_id):
+        qty = bounded_int(request.form.get('quantity'), 0)
+        cart = dict(session.get('cart', {}))
+        if qty == 0:
+            cart.pop(str(product_id), None)
+        else:
+            p = get_product(product_id)
+            if qty > p['stock']:
+                flash('The requested quantity is not available.', 'error')
+                return redirect(url_for('cart'))
+            cart[str(product_id)] = qty
+        session['cart'] = cart
+        return redirect(url_for('cart'))
+
+    @app.route('/checkout', methods=['GET', 'POST'])
+    def checkout():
+        lines = cart_lines()
+        if not lines:
+            flash('Add a product before checking out.', 'error')
+            return redirect(url_for('shop'))
+        if app.config.get('DEMO_MODE'):
+            demo['ensure_customer']()
+        session.setdefault('checkout_key', secrets.token_hex(24))
+        subtotal = sum(x['total'] for x in lines)
+        if request.method == 'POST':
+            key = request.form.get('checkout_key', '')
+            if not secrets.compare_digest(key, session.get('checkout_key', '')):
+                abort(400, 'This checkout has expired. Reload and try again.')
+            previous = db().execute('SELECT token FROM orders WHERE checkout_key=?', (key,)).fetchone()
+            if previous:
+                return redirect(url_for('confirmation', token=previous['token']))
+            fields = {k: request.form.get(k, '').strip() for k in ['name', 'email', 'phone', 'fulfillment', 'address', 'notes']}
+            errors = []
+            code=request.form.get('agent_code',eco['current_referral']()).strip()
+            if code and not eco['resolve_agent'](code):
+                errors.append('Enter a valid approved agent code or leave it blank.')
+            if not 2 <= len(fields['name']) <= 120:
+                errors.append('Enter your full name (2–120 characters).')
+            if not valid_email(fields['email']):
+                errors.append('Enter a valid email address.')
+            if not re.fullmatch(r'[+\d ()-]{7,25}', fields['phone']):
+                errors.append('Enter a valid contact number.')
+            if fields['fulfillment'] not in ['collection', 'randburg']:
+                errors.append('Choose collection or Randburg delivery.')
+            if fields['fulfillment'] == 'randburg' and not 10 <= len(fields['address']) <= 600:
+                errors.append('Enter a full Randburg delivery address.')
+            if len(fields['notes']) > 1000 or len(fields['address']) > 600:
+                errors.append('Please shorten your address or order notes.')
+            if not request.form.get('consent'):
+                errors.append('Confirm that we may use your details to fulfil this order.')
+            if errors:
+                for error in errors:
+                    flash(error, 'error')
             else:
-                with store.connect() as conn:
-                    conn.execute("UPDATE users SET password_hash=? WHERE id=?", (generate_password_hash(new), g.user["id"]))
-                    conn.execute("DELETE FROM login_failures WHERE username=?", (g.user["username"],))
-                    conn.execute("INSERT INTO access_audit(username,event,created_at) VALUES (?,?,?)", (g.user["username"], "Changed own password", utcnow()))
-                session.clear()
-                flash("Password changed. Please sign in again.", "success")
-                return redirect(url_for("login"))
-        return render_template("change_password.html", title="Change password")
+                connection = db()
+                try:
+                    connection.execute('BEGIN IMMEDIATE')
+                    # Atomic stock reservation and price calculation; never trust posted totals.
+                    subtotal = 0
+                    for line in lines:
+                        p = get_product(line['product']['id'])
+                        qty = line['quantity']
+                        result = connection.execute('UPDATE products SET stock=stock-? WHERE id=? AND stock>=? AND active=1', (qty, p['id'], qty))
+                        if result.rowcount != 1:
+                            raise ValueError(f"{p['name']} is no longer available in that quantity. Please update your cart.")
+                        line['product'] = p
+                        line['total']=p['price'] * qty
+                        subtotal += line['total']
+                    applied_coupon=eco['coupon_for_checkout'](connection,subtotal)
+                    discount=applied_coupon['discount']
+                    shipping = 0 if fields['fulfillment'] == 'collection' or subtotal-discount > 60000 else 5000
+                    token = secrets.token_urlsafe(32)
+                    order_id = connection.execute('INSERT INTO orders(token,checkout_key,name,email,phone,fulfillment,address,notes,subtotal,shipping,total) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+                        (token, key, fields['name'], fields['email'], fields['phone'], fields['fulfillment'], fields['address'], fields['notes'], subtotal, shipping, subtotal-discount + shipping)).lastrowid
+                    for line in lines:
+                        p = line['product']
+                        connection.execute('INSERT INTO order_items(order_id,product_id,name,quantity,unit_price) VALUES(?,?,?,?,?)', (order_id, p['id'], p['name'], line['quantity'], p['price']))
+                    eco['capture_order'](connection,order_id,request.form,applied_coupon)
+                    connection.commit()
+                    session['cart'] = {}
+                    session.pop('coupon',None)
+                    session.pop('checkout_key', None)
+                    session['recent_order'] = token
+                    return redirect(url_for('demo.payment_select',token=token) if app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED') else url_for('confirmation', token=token))
+                except ValueError as error:
+                    connection.rollback()
+                    flash(str(error), 'error')
+                except sqlite3.IntegrityError:
+                    connection.rollback()
+                    existing = connection.execute('SELECT token FROM orders WHERE checkout_key=?', (key,)).fetchone()
+                    if existing:
+                        return redirect(url_for('confirmation', token=existing['token']))
+                    raise
+        return render_template('checkout.html', lines=lines, subtotal=subtotal, title='Checkout',addresses=eco['checkout_addresses'](),**eco['cart_promotion'](subtotal))
 
-    @app.route("/login", methods=["GET", "POST"])
+    @app.route('/order/<token>')
+    def confirmation(token):
+        # Opaque 256-bit link is the customer's order receipt; do not expose sequential IDs.
+        order = db().execute('SELECT * FROM orders WHERE token=?', (token,)).fetchone()
+        if not order:
+            abort(404)
+        items = db().execute('SELECT * FROM order_items WHERE order_id=?', (order['id'],)).fetchall()
+        return render_template('confirmation.html', order=order, items=items, title='Order received',**eco['order_context'](order['id']))
+
+    @app.route('/about')
+    def about():
+        return render_template('about.html', story=db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id LIMIT 1").fetchone(), title='About Dr Ntuli')
+
+    @app.route('/health-tips')
+    def tips():
+        return render_template('tips.html', title='Health tips & product guidance')
+
+    @app.route('/contact', methods=['GET', 'POST'])
+    def contact():
+        if request.method == 'POST':
+            name, email, message = (request.form.get(k, '').strip() for k in ['name', 'email', 'message'])
+            if not 2 <= len(name) <= 120 or not valid_email(email) or not 10 <= len(message) <= 3000:
+                flash('Enter your name, valid email and a message of 10–3,000 characters.', 'error')
+            elif request.form.get('website'):
+                abort(400)
+            elif not request.form.get('consent'):
+                flash('Please agree to be contacted about your enquiry.', 'error')
+            elif time.time() - session.get('enquiry_at', 0) < 60:
+                flash('Your message was already received. Please wait a minute before sending another.', 'error')
+            else:
+                subject=request.form.get('subject','General enquiry')
+                if subject not in ('General enquiry','Product information','Existing order','Delivery','Returns'):
+                    abort(400)
+                db().execute('INSERT INTO enquiries(name,email,message) VALUES(?,?,?)', (name, email, 'Subject: '+subject+'\n\n'+message))
+                db().commit()
+                session['enquiry_at'] = time.time()
+                flash('Your enquiry has been saved for our team.', 'success')
+                return redirect(url_for('contact'))
+        return render_template('contact.html', title='Contact Isazi')
+
+    @app.route('/policies')
+    def policies():
+        return render_template('policies.html', title='Delivery, returns & privacy')
+
+    @app.route('/media/<filename>')
+    def uploaded(filename):
+        return send_from_directory(app.config['UPLOAD_DIR'], filename)
+
+    @app.route('/owner/login', methods=['GET', 'POST'])
     def login():
-        if g.user:
-            return redirect(url_for("owner_dashboard" if g.user["role"] == "admin" else "client_progress"))
-        if request.method == "POST":
-            csrf_check()
-            username = request.form.get("username", "").strip().lower()
-            password = request.form.get("password", "")
-            remote = request.remote_addr or "unknown"
-            now_epoch = int(time.time())
-            with store.connect() as conn:
-                conn.execute("DELETE FROM login_failures WHERE created_epoch<?", (now_epoch - 3600,))
-                attempt_count = conn.execute("SELECT COUNT(*) FROM login_failures WHERE username=? AND ip=? AND created_epoch>?",
-                                             (username, remote, now_epoch - 900)).fetchone()[0]
-                record = conn.execute("SELECT * FROM users WHERE username=? AND enabled=1", (username,)).fetchone()
-            if attempt_count >= 8:
-                flash("Too many failed attempts. Try again later.", "error")
-                return render_template("login.html", title="Secure sign in"), 429
-            valid = bool(record and check_password_hash(record["password_hash"], password))
-            if valid:
+        if request.method == 'POST':
+            ip = request.remote_addr or 'unknown'
+            row = db().execute('SELECT * FROM login_attempts WHERE ip=?', (ip,)).fetchone()
+            if row and row['locked_until'] > time.time():
+                flash('Too many attempts. Please wait 15 minutes.', 'error')
+                return render_template('login.html', title='Owner sign in'), 429
+            admin = db().execute('SELECT * FROM admins WHERE id=1').fetchone()
+            if admin and check_password_hash(admin['password_hash'], request.form.get('password', '')):
                 session.clear()
-                session["csrf"] = secrets.token_urlsafe(32)
-                session["user_id"] = record["id"]
+                session['admin'] = True
                 session.permanent = True
-                with store.connect() as conn:
-                    conn.execute("INSERT INTO access_audit(username,event,created_at) VALUES (?,?,?)", (username,"login",utcnow()))
-                return redirect(url_for("owner_dashboard" if record["role"] == "admin" else "client_progress"))
-            with store.connect() as conn:
-                conn.execute("INSERT INTO login_failures(username,ip,created_epoch) VALUES (?,?,?)", (username,remote,now_epoch))
-            flash("Incorrect username or password.", "error")
-        return render_template("login.html", title="Secure sign in")
+                db().execute('DELETE FROM login_attempts WHERE ip=?', (ip,))
+                db().commit()
+                return redirect(url_for('owner'))
+            failures = (row['failures'] if row and time.time() - row['locked_until'] < 900 else 0) + 1
+            db().execute('INSERT OR REPLACE INTO login_attempts(ip,failures,locked_until) VALUES(?,?,?)', (ip, failures, time.time() + 900 if failures >= 5 else time.time()))
+            db().commit()
+            flash('Unable to sign in. Check your password. First run? Use the create-owner command in the README.', 'error')
+        return render_template('login.html', title='Owner sign in')
 
-    @app.post("/logout")
-    @logged_in
-    def logout():
-        csrf_check()
+    @app.post('/owner/logout')
+    @admin_only
+    def owner_logout():
         session.clear()
-        return redirect(url_for("login"))
+        return redirect(url_for('home'))
 
-    @app.get("/page/<int:page_num>")
-    @logged_in
-    def page(page_num):
-        if page_num not in TITLES:
-            abort(404)
-        version, data = store.current()
-        return render_template(f"page{page_num}.html", data=data, version=version, metrics=completion(data),
-                               page_num=page_num, title=TITLES[page_num], choices=CHOICES)
+    @app.route('/owner')
+    @admin_only
+    def owner():
+        orders = db().execute('SELECT o.*,e.payment_test FROM orders o JOIN order_extra e ON e.order_id=o.id ORDER BY o.id DESC LIMIT 200').fetchall()
+        counts = db().execute("SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status IN ('Paid','Ready','Completed') THEN total ELSE 0 END),0) AS confirmed, SUM(CASE WHEN status='Awaiting confirmation' THEN 1 ELSE 0 END) AS pending FROM orders WHERE id NOT IN (SELECT order_id FROM order_extra WHERE payment_test=1)").fetchone()
+        products = db().execute('SELECT * FROM products ORDER BY id').fetchall()
+        enquiries = db().execute('SELECT * FROM enquiries ORDER BY id DESC LIMIT 100').fetchall()
+        return render_template('owner.html', orders=orders, counts=counts, products=products, enquiries=enquiries, title='Owner dashboard')
 
-    @app.get("/edit/overview")
-    @editor
-    def overview_form():
-        version, data = store.current()
-        return render_template("edit.html", collection="overview", record=data["overview"], id="",
-                               fields=[(k,v,"textarea" if k in ("summary","agile_intro","agile_cycle","vision","assumptions") else "text") for k,v in OVERVIEW_FIELDS.items()],
-                               version=version, title="Edit project overview", choices=CHOICES, return_page=1)
-
-    @app.get("/edit/<collection>")
-    @editor
-    def edit_form(collection):
-        if collection not in SCHEMA:
-            abort(404)
-        version, data = store.current()
-        ident = request.args.get("id")
-        record = next((x for x in data[collection] if x["id"] == ident), None) if ident else None
-        if ident and record is None:
-            abort(404)
-        return render_template("edit.html", collection=collection, record=record, id=ident,
-                               fields=SCHEMA[collection][1], version=version,
-                               title=("Edit " if record else "Add ") + COLLECTION_NAMES[collection].lower(),
-                               choices=CHOICES, return_page=SCHEMA[collection][0])
-
-    @app.post("/save/overview")
-    @editor
-    def save_overview():
-        csrf_check()
-        values = {k: request.form.get(k, "") for k in OVERVIEW_FIELDS}
-        return persist(request.form.get("version"), request.form.get("message") or "Updated project overview",
-                       {"action": "overview", "values": values}, 1)
-
-    @app.post("/save/<collection>")
-    @editor
-    def save_collection(collection):
-        csrf_check()
-        if collection not in SCHEMA:
-            abort(404)
-        values = {k: request.form.get(k, "") for k, _, _ in SCHEMA[collection][1]}
-        ident = request.form.get("id")
-        action = "update" if ident else "create"
-        message = request.form.get("message") or f"{action.title()} {COLLECTION_NAMES[collection].lower()}"
-        return persist(request.form.get("version"), message,
-                       {"action": action, "collection": collection, "id": ident, "values": values}, SCHEMA[collection][0])
-
-    @app.post("/delete/<collection>/<ident>")
-    @editor
-    def delete_item(collection, ident):
-        csrf_check()
-        if collection not in SCHEMA:
-            abort(404)
-        return persist(request.form.get("version"), request.form.get("message") or f"Deleted {COLLECTION_NAMES[collection].lower()} item",
-                       {"action": "delete", "collection": collection, "id": ident}, SCHEMA[collection][0])
-
-    def persist(expected, message, operation, return_page=1):
-        try:
-            if not expected or not expected.isdecimal():
-                raise ValidationError("Missing edit version. Reload the editor.")
-            updated = store.save(int(expected), g.user["username"], message, operation)
-        except (ValidationError, ConflictError, ValueError) as exc:
-            flash(str(exc), "error")
-            if isinstance(exc, ConflictError):
-                return redirect(url_for("history")), 303
-            return redirect(request.referrer or url_for("page", page_num=return_page)), 303
-        flash(f"Saved successfully as version {updated}.", "success")
-        if operation.get("action") == "commercial_scope":
-            return redirect(url_for("client_scope"))
-        if operation.get("collection") == "client_steps":
-            return redirect(url_for("client_progress"))
-        if operation.get("collection") == "designs":
-            return redirect(url_for("design_catalogue"))
-        return redirect(url_for("page", page_num=return_page))
-
-    @app.post("/checkpoint")
-    @editor
-    def checkpoint():
-        csrf_check()
-        return persist(request.form.get("version"), request.form.get("message") or "Client review checkpoint",
-                       {"action": "checkpoint"}, 1)
-
-    @app.get("/history")
-    @logged_in
-    def history():
-        version, _ = store.current()
-        revisions = store.versions()
-        return render_template("history.html", versions=revisions, version=version, title="Version history")
-
-    @app.get("/history/compare")
-    @logged_in
-    def compare():
-        version, _ = store.current()
-        try:
-            a = int(request.args.get("from", "1"))
-            b = int(request.args.get("to", str(version)))
-        except ValueError:
-            abort(400)
-        va, vb = store.revision(a), store.revision(b)
-        if not va or not vb:
-            abort(404)
-        before = json.dumps(va["state"], indent=2, ensure_ascii=False, sort_keys=True).splitlines()
-        after = json.dumps(vb["state"], indent=2, ensure_ascii=False, sort_keys=True).splitlines()
-        diff = list(difflib.unified_diff(before, after, fromfile=f"Version {a}", tofile=f"Version {b}", lineterm=""))
-        return render_template("compare.html", title="Compare versions", before=va, after=vb,
-                               diff=diff, version=version)
-
-    @app.get("/history/<int:rev>")
-    @logged_in
-    def revision_detail(rev):
-        snapshot = store.revision(rev)
-        if not snapshot:
-            abort(404)
-        version, _ = store.current()
-        return render_template("revision.html", snapshot=snapshot, pretty=json.dumps(snapshot["state"], ensure_ascii=False, indent=2),
-                               version=version, title=f"Version {rev}")
-
-    @app.post("/history/<int:rev>/restore")
-    @editor
-    def restore(rev):
-        csrf_check()
-        return persist(request.form.get("version"), f"Restored content of version {rev}",
-                       {"action": "restore", "restore_version": rev}, 1)
-
-    @app.get("/export/revision/<int:rev>.json")
-    @logged_in
-    def export_revision(rev):
-        snapshot = store.revision(rev)
-        if not snapshot:
-            abort(404)
-        payload = json.dumps({"version": rev, "exported_utc": utcnow(), "plan": snapshot["state"]}, ensure_ascii=False, indent=2)
-        return send_file(io.BytesIO(payload.encode("utf-8")), as_attachment=True,
-                         download_name=f"isazi_agile_plan_v{rev}.json", mimetype="application/json")
-
-    @app.get("/export/json")
-    @logged_in
-    def export_json():
-        version, data = store.current()
-        with store.connect() as conn:
-            notes = [dict(x) for x in conn.execute("SELECT id,subject_type,subject_id,author,feedback_type,comment,created_at FROM client_feedback ORDER BY id")]
-        payload = json.dumps({"version": version, "exported_utc": utcnow(), "plan": data, "client_feedback": notes}, ensure_ascii=False, indent=2)
-        return send_file(io.BytesIO(payload.encode("utf-8")), as_attachment=True,
-                         download_name=f"isazi_agile_plan_v{version}.json", mimetype="application/json")
-
-    @app.get("/export/client-feedback.csv")
-    @logged_in
-    def export_client_feedback():
-        with store.connect() as conn:
-            rows = [dict(x) for x in conn.execute(
-                "SELECT id,subject_type,subject_id,author,feedback_type,comment,created_at FROM client_feedback ORDER BY id")]
-        fields = ["id","subject_type","subject_id","author","feedback_type","comment","created_at"]
-        output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(rows)
-        return send_file(io.BytesIO(("\ufeff"+output.getvalue()).encode("utf-8")),as_attachment=True,
-                         download_name="isazi_client_feedback.csv",mimetype="text/csv")
-
-    @app.get("/export/stories.csv")
-    @logged_in
-    def export_stories():
-        _, data = store.current()
-        columns = [field for field, _, _ in SCHEMA["stories"][1]]
-        stream = io.StringIO()
-        writer = csv.DictWriter(stream, fieldnames=columns, extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(data["stories"])
-        return send_file(io.BytesIO(("\ufeff" + stream.getvalue()).encode("utf-8")), as_attachment=True,
-                         download_name="isazi_user_stories.csv", mimetype="text/csv")
-
-    # Client review module. These routes are part of the v3 templates and
-    # must be registered before templates call url_for() for them.
-    @app.get("/client/progress")
-    @logged_in
-    def client_progress():
-        version, data = store.current()
-        steps = data.get("client_steps", [])
-        designs = data.get("designs", [])
-        chosen = next((d for d in designs if d.get("status") in ("Approved", "Selected")), None)
-        counts = sum(s.get("status") in ("Approved", "Completed") for s in steps)
-        notes = {s["id"]: feedback_list(store, "step", s["id"]) for s in steps}
-        attention = [s for s in steps if s.get("status") in ("Awaiting client", "In review")]
-        return render_template("client_progress.html", title="Client progress tracker",
-                               version=version, steps=steps, completed=counts,
-                               total=len(steps), selected=chosen, notes=notes, attention=attention,
-                               commercial_scope=data.get("commercial_scope", default_commercial_scope()))
-
-    @app.get("/client")
-    @logged_in
-    def client_home():
-        return redirect(url_for("client_progress"))
-
-    @app.get("/client/scope")
-    @logged_in
-    def client_scope():
-        version, data = store.current()
-        return render_template("client_scope.html", title="E-commerce project scope", version=version,
-                               scope=data.get("commercial_scope", default_commercial_scope()))
-
-    @app.route("/client/scope/edit", methods=["GET", "POST"])
-    @editor
-    def edit_client_scope():
-        if request.method == "POST":
-            csrf_check()
-            scope = {k: request.form.get(k, "") for k in COMMERCIAL_SCOPE_FIELDS}
-            return persist(request.form.get("version"),
-                           request.form.get("message") or "Updated project scope and separately quoted services",
-                           {"action": "commercial_scope", "values": scope}, 2)
-        version, data = store.current()
-        return render_template("edit_client_scope.html", title="Edit project scope", version=version,
-                               scope=data.get("commercial_scope", default_commercial_scope()),
-                               fields=COMMERCIAL_SCOPE_FIELDS, statuses=SCOPE_STATUS)
-
-    @app.get("/client/status-report.pdf")
-    @logged_in
-    def download_status_pdf():
-        version, data = store.current()
-        with store.connect() as conn:
-            notes = [dict(x) for x in conn.execute(
-                "SELECT subject_type,subject_id,author,feedback_type,comment,created_at FROM client_feedback ORDER BY id")]
-        pdf = build_status_pdf(data, version, notes)
-        return send_file(io.BytesIO(pdf), mimetype="application/pdf", as_attachment=True,
-                         download_name=f"Isazi_Project_Status_v{version}.pdf", max_age=0)
-
-    @app.get("/client/designs")
-    @logged_in
-    def design_catalogue():
-        version, data = store.current()
-        designs = data.get("designs", [])
-        feedback_counts = {d["id"]: len(feedback_list(store, "design", d["id"])) for d in designs}
-        return render_template("design_catalogue.html", title="Website design catalogue",
-                               version=version, designs=designs, feedback_counts=feedback_counts)
-
-    @app.get("/client/designs/<ident>")
-    @logged_in
-    def design_detail(ident):
-        version, data = store.current()
-        design = next((d for d in data.get("designs", []) if d["id"] == ident), None)
-        if design is None:
-            abort(404)
-        notes = feedback_list(store, "design", ident)
-        return render_template("design_detail.html", title=design["title"],
-                               version=version, design=design, notes=notes)
-
-    @app.get("/client/designs/<ident>/preview")
-    @logged_in
-    def storefront_preview(ident):
-        _, data = store.current()
-        design = next((d for d in data.get("designs", []) if d["id"] == ident), None)
-        if design is None:
-            abort(404)
-        # Exact sample individual prices come from the client-provided catalogue.
-        # These are not inventory records and the preview never accepts orders.
-        products = [
-            {"name":"Smolo", "price":"250", "price_number":250, "photo":"design_smolo.jpg",
-             "label":"Bottled herbal product", "category":"bottles", "blurb":"Traditional product in the supplied Isazi catalogue."},
-            {"name":"Soursop Leaves", "price":"350", "price_number":350, "photo":"design_soursop.jpg",
-             "label":"Leaves & botanicals", "category":"botanicals", "blurb":"Soursop leaf product; final ingredients and labelling pending."},
-            {"name":"Sea Moss", "price":"450", "price_number":450, "photo":"design_sea_moss.jpg",
-             "label":"Botanical selection", "category":"botanicals", "blurb":"Sea moss product, presented for client concept review."},
-            {"name":"Eye Care Solution", "price":"100", "price_number":100, "photo":"design_eye_care.jpg",
-             "label":"Bottled solution", "category":"solutions", "blurb":"Catalogue reference only; safety and permitted claims require review."},
-        ]
-        for product in products:
-            product["image_url"] = url_for("static", filename="img/"+product["photo"])
-        return render_template("storefront_preview.html", title="Storefront concept preview",
-                               design=design, products=products)
-
-    @app.post("/client/feedback/<subject_type>/<ident>")
-    @logged_in
-    def submit_client_feedback(subject_type, ident):
-        csrf_check()
-        if subject_type not in ("step", "design"):
-            abort(404)
-        try:
-            add_feedback(store, subject_type, ident, g.user["username"],
-                         request.form.get("feedback_type", "Comment"),
-                         request.form.get("comment", ""))
-            flash("Feedback saved with your name and timestamp.", "success")
-        except ValidationError as exc:
-            flash(str(exc), "error")
-        if subject_type == "step":
-            return redirect(url_for("client_progress"), code=303)
-        return redirect(url_for("design_detail", ident=ident), code=303)
-
-    def save_client_status(collection, ident, status, expected_version, message):
-        # Submit a full validated record to the version-controlled store.
-        version, data = store.current()
-        record = next((r for r in data.get(collection, []) if r["id"] == ident), None)
-        if record is None:
-            abort(404)
-        option_key = "client_status" if collection == "client_steps" else "design_status"
-        if status not in CHOICES[option_key]:
-            flash("Choose one of the available statuses.", "error")
-            return redirect(url_for("client_progress" if collection == "client_steps" else "design_detail",
-                                    **({} if collection == "client_steps" else {"ident": ident})), code=303)
-        values = {field: record.get(field, "") for field, _, _ in SCHEMA[collection][1]}
-        values["status"] = status
-        return persist(expected_version, message, {"action": "update", "collection": collection,
-                                                  "id": ident, "values": values},
-                       SCHEMA[collection][0])
-
-    @app.post("/client/progress/<ident>/status")
-    @editor
-    def update_client_status(ident):
-        csrf_check()
-        return save_client_status("client_steps", ident, request.form.get("status", ""),
-                                  request.form.get("version", ""), "Updated client progress status")
-
-    @app.post("/client/designs/<ident>/status")
-    @editor
-    def update_design_status(ident):
-        csrf_check()
-        return save_client_status("designs", ident, request.form.get("status", ""),
-                                  request.form.get("version", ""), "Updated website design status")
-
-    @app.route("/users", methods=["GET", "POST"])
-    @admin
-    def users():
-        if request.method == "POST":
-            csrf_check()
-            action = request.form.get("action")
-            name = request.form.get("username", "").strip().lower()
-            role = request.form.get("role", "viewer")
-            password = request.form.get("password", "")
+    @app.route('/owner/product/new', methods=['GET', 'POST'])
+    @app.route('/owner/product/<int:product_id>', methods=['GET', 'POST'])
+    @admin_only
+    def owner_product(product_id=None):
+        p = get_product(product_id, False) if product_id else None
+        if request.method == 'POST':
             try:
-                with store.connect() as conn:
-                    if action == "create":
-                        if not (name and 3 <= len(name) <= 40 and name.replace("_", "").replace("-", "").isalnum()):
-                            raise ValidationError("Username must be 3–40 characters, using letters, numbers, _ or -.")
-                        if role not in ("admin", "editor", "viewer") or len(password) < 12:
-                            raise ValidationError("Choose a valid role and a password of at least 12 characters.")
-                        conn.execute("INSERT INTO users (username,password_hash,role,enabled,created_at) VALUES (?,?,?,?,?)",
-                                     (name,generate_password_hash(password),role,1,utcnow()))
-                        msg = f"Created {role} account {name}"
-                    elif action in ("disable", "enable", "reset"):
-                        uid = int(request.form.get("user_id", "0"))
-                        target = conn.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
-                        if not target:
-                            raise ValidationError("User not found")
-                        if target["id"] == g.user["id"] and action == "disable":
-                            raise ValidationError("You cannot disable your own account")
-                        if action == "reset":
-                            if len(password) < 12:
-                                raise ValidationError("New password must contain at least 12 characters")
-                            conn.execute("UPDATE users SET password_hash=? WHERE id=?", (generate_password_hash(password),uid))
-                        else:
-                            conn.execute("UPDATE users SET enabled=? WHERE id=?", (1 if action=="enable" else 0,uid))
-                        msg = f"{action.title()} account {target['username']}"
-                    else:
-                        raise ValidationError("Unknown user action")
-                    conn.execute("INSERT INTO access_audit (username,event,created_at) VALUES (?,?,?)", (g.user["username"],msg,utcnow()))
-                flash(msg, "success")
-            except (ValidationError, ValueError, sqlite3.IntegrityError) as exc:
-                flash(str(exc), "error")
-            return redirect(url_for("users"))
-        with store.connect() as conn:
-            all_users = [dict(x) for x in conn.execute("SELECT id,username,role,enabled,created_at FROM users ORDER BY username")]
-            audit = [dict(x) for x in conn.execute("SELECT username,event,created_at FROM access_audit ORDER BY id DESC LIMIT 25")]
-        return render_template("users.html", title="Access management", users=all_users, audit=audit)
+                name, category = request.form.get('name', '').strip(), request.form.get('category', '')
+                description = request.form.get('description', '').strip()
+                if not 2 <= len(name) <= 120 or category not in CATEGORIES or not 10 <= len(description) <= 5000:
+                    raise ValueError('Enter a name, category and description (10–5,000 characters).')
+                value = Decimal(request.form.get('price', ''))
+                if not value.is_finite() or value < 0 or value > 100000 or value != value.quantize(Decimal('.01')):
+                    raise ValueError('Enter a price between R0 and R100,000 with no more than two decimals.')
+                price = int(value * 100)
+                stock = int(request.form.get('stock', ''))
+                if not 0 <= stock <= 100000:
+                    raise ValueError('Enter stock between 0 and 100,000.')
+                image_name = p['image'] if p else 'product-1.webp'
+                upload = request.files.get('image')
+                if upload and upload.filename:
+                    try:
+                        upload.stream.seek(0, os.SEEK_END)
+                        if upload.stream.tell() > 10 * 1024 * 1024:
+                            raise ValueError('Product images must be under 10 MB.')
+                        upload.stream.seek(0)
+                        with Image.open(upload.stream) as im:
+                            if im.width * im.height > 20000000:
+                                raise ValueError('Image is too large. Use an image under 20 megapixels.')
+                            im = im.convert('RGB')
+                            im.thumbnail((2400, 2400))
+                            image_name = 'upload-' + secrets.token_hex(16) + '.webp'
+                            im.save(Path(app.config['UPLOAD_DIR']) / image_name, 'WEBP', quality=88)
+                    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+                        raise ValueError('Upload a valid JPG, PNG or WebP image.')
+                active = 1 if request.form.get('active') else 0
+                values = (name, category, price, description, image_name, stock, active)
+                if p:
+                    db().execute('UPDATE products SET name=?,category=?,price=?,description=?,image=?,stock=?,active=? WHERE id=?', values + (p['id'],))
+                else:
+                    db().execute('INSERT INTO products(name,category,price,description,image,stock,active) VALUES(?,?,?,?,?,?,?)', values)
+                db().commit()
+                flash('Product saved.', 'success')
+                return redirect(url_for('owner'))
+            except (ValueError, InvalidOperation) as error:
+                flash(str(error) if isinstance(error, ValueError) else 'Enter a valid price.', 'error')
+        return render_template('owner_product.html', product=p, title='Edit product' if p else 'Add product',**(eco['product_context'](p['id']) if p else {}))
 
-    @app.get("/health")
+    @app.route('/owner/order/<int:order_id>', methods=['GET', 'POST'])
+    @admin_only
+    def owner_order(order_id):
+        connection = db()
+        order = connection.execute('SELECT * FROM orders WHERE id=?', (order_id,)).fetchone()
+        if not order:
+            abort(404)
+        items = connection.execute('SELECT * FROM order_items WHERE order_id=?', (order_id,)).fetchall()
+        if request.method == 'POST':
+            status = request.form.get('status')
+            if status not in ['Awaiting confirmation', 'Paid', 'Ready', 'Completed', 'Cancelled']:
+                abort(400)
+            connection.execute('BEGIN IMMEDIATE')
+            current = connection.execute('SELECT status FROM orders WHERE id=?', (order_id,)).fetchone()['status']
+            if current == 'Cancelled' and status != 'Cancelled':
+                connection.rollback()
+                flash('Cancelled orders cannot be reopened. Create a new order to reserve stock again.', 'error')
+            elif status=='Awaiting confirmation' and eco['order_context'](order_id)['finance']['received']>0:
+                connection.rollback()
+                flash('Recorded payment cannot be undone by changing status. Use the refund workflow for money already returned.', 'error')
+            else:
+                if status == 'Cancelled' and current != 'Cancelled':
+                    for item in items:
+                        connection.execute('UPDATE products SET stock=stock+? WHERE id=?', (item['quantity'], item['product_id']))
+                connection.execute('UPDATE orders SET status=? WHERE id=?', (status, order_id))
+                eco['order_changed'](connection,order_id,current)
+                connection.commit()
+                flash('Order updated.', 'success')
+            return redirect(url_for('owner_order', order_id=order_id))
+        return render_template('owner_order.html', order=order, items=items, title=f'Order ISZ-{order_id:05d}',**eco['order_context'](order_id))
+
+    @app.route('/owner/home-images')
+    @admin_only
+    def owner_home_images():
+        saved = {row['key']: dict(row) for row in db().execute('SELECT * FROM home_images')}
+        return render_template('owner_home_images.html', slots=HOME_IMAGE_SLOTS, saved=saved, title='Home images & sizes')
+
+    @app.post('/owner/home-images/<key>')
+    @admin_only
+    def owner_home_image_save(key):
+        if key not in HOME_IMAGE_SLOTS:
+            abort(404)
+        label, default, recommended_width, recommended_height, hint = HOME_IMAGE_SLOTS[key]
+        if request.form.get('reset'):
+            db().execute('UPDATE home_images SET filename=?,width=0,height=0 WHERE key=?', (default, key))
+            db().commit()
+            flash(label + ' reset to the default artwork.', 'success')
+            return redirect(url_for('owner_home_images'))
+        upload = request.files.get('image')
+        if not upload or not upload.filename:
+            flash('Choose an image first.', 'error')
+            return redirect(url_for('owner_home_images'))
+        target = None
+        try:
+            upload.stream.seek(0, os.SEEK_END)
+            if upload.stream.tell() > 10 * 1024 * 1024:
+                raise ValueError('Use an image under 10 MB.')
+            upload.stream.seek(0)
+            with Image.open(upload.stream) as image:
+                if image.width * image.height > 20000000:
+                    raise ValueError('Use an image under 20 megapixels.')
+                image = image.convert('RGBA' if image.mode in ('RGBA', 'LA') or 'transparency' in image.info else 'RGB')
+                image.thumbnail((3200, 3200))
+                width, height = image.size
+                filename = 'upload-home-' + secrets.token_hex(16) + '.webp'
+                target = Path(app.config['UPLOAD_DIR']) / filename
+                image.save(target, 'WEBP', quality=92)
+            db().execute('UPDATE home_images SET filename=?,width=?,height=? WHERE key=?', (filename, width, height, key))
+            db().commit()
+            flash(label + ' saved.', 'success')
+            if width < recommended_width * .7 or height < recommended_height * .7:
+                flash(f'This image is {width} × {height} px. For sharper display, use approximately {recommended_width} × {recommended_height} px.', 'error')
+        except (ValueError, UnidentifiedImageError, OSError, Image.DecompressionBombError) as error:
+            if target:
+                target.unlink(missing_ok=True)
+            flash(str(error) if isinstance(error, ValueError) else 'Upload a valid JPG, PNG or WebP image.', 'error')
+        return redirect(url_for('owner_home_images'))
+
+    @app.route('/owner/media')
+    @admin_only
+    def owner_media():
+        return render_template('owner_media.html', videos=db().execute('SELECT * FROM videos ORDER BY id').fetchall(), title='Videos & testimonials')
+
+    @app.post('/owner/media/<int:video_id>')
+    @admin_only
+    def owner_media_save(video_id):
+        video = db().execute('SELECT * FROM videos WHERE id=?', (video_id,)).fetchone()
+        if not video:
+            abort(404)
+        created_files = []
+        try:
+            title = request.form.get('title', '').strip()
+            person = request.form.get('person', '').strip()
+            caption = request.form.get('caption', '').strip()
+            if not 2 <= len(title) <= 100 or len(person) > 100 or len(caption) > 500:
+                raise ValueError('Use a title of 2–100 characters, a name under 100 characters and a caption under 500 characters.')
+            source = video['video_source']
+            remote = request.form.get('video_url', '').strip()
+            if remote:
+                parsed = urlsplit(remote)
+                if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or len(remote) > 1500:
+                    raise ValueError('Use a direct HTTPS MP4 or WebM video URL.')
+                if not parsed.path.lower().endswith(('.mp4', '.webm')):
+                    raise ValueError('Use a direct .mp4 or .webm file URL, not a YouTube or social media page.')
+                source = remote
+            upload = request.files.get('video')
+            if upload and upload.filename:
+                upload.stream.seek(0, os.SEEK_END)
+                size = upload.stream.tell()
+                upload.stream.seek(0)
+                if not 12 <= size <= 100 * 1024 * 1024:
+                    raise ValueError('Upload an MP4 or WebM video under 100 MB.')
+                header = upload.stream.read(32)
+                upload.stream.seek(0)
+                ext = Path(upload.filename).suffix.lower()
+                if not ((ext == '.mp4' and header[4:8] == b'ftyp') or (ext == '.webm' and header[:4] == b'\x1aE\xdf\xa3')):
+                    raise ValueError('The file must be a valid MP4 or WebM video.')
+                source = 'upload-video-' + secrets.token_hex(16) + ext
+                target = Path(app.config['UPLOAD_DIR']) / source
+                created_files.append(target)
+                upload.save(target)
+            if request.form.get('clear_video'):
+                source = ''
+            audio_source = video['audio_source']
+            audio_remote = request.form.get('audio_url', '').strip()
+            audio_upload = request.files.get('audio')
+            if video['kind'] != 'testimonial' and (audio_remote or (audio_upload and audio_upload.filename)):
+                raise ValueError('Audio uploads belong to testimonial slots. Use the video field for Our Story.')
+            if audio_remote:
+                parsed = urlsplit(audio_remote)
+                if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or len(audio_remote)>1500 or not parsed.path.lower().endswith(('.mp3','.m4a','.ogg','.wav')):
+                    raise ValueError('Use a direct HTTPS MP3, M4A, OGG or WAV audio file URL.')
+                audio_source = audio_remote
+            if audio_upload and audio_upload.filename:
+                audio_upload.stream.seek(0, os.SEEK_END)
+                size = audio_upload.stream.tell()
+                audio_upload.stream.seek(0)
+                if not 12 <= size <= 50*1024*1024:
+                    raise ValueError('Upload an MP3, M4A, OGG or WAV recording under 50 MB.')
+                header = audio_upload.stream.read(32)
+                audio_upload.stream.seek(0)
+                ext = Path(audio_upload.filename).suffix.lower()
+                valid = ((ext=='.mp3' and (header[:3]==b'ID3' or (header[0]==255 and header[1]&224==224)))
+                         or (ext=='.m4a' and header[4:8]==b'ftyp')
+                         or (ext=='.ogg' and header[:4]==b'OggS')
+                         or (ext=='.wav' and header[:4]==b'RIFF' and header[8:12]==b'WAVE'))
+                if not valid:
+                    raise ValueError('The recording must be a valid MP3, M4A, OGG or WAV audio file.')
+                audio_source='upload-audio-'+secrets.token_hex(16)+ext
+                target=Path(app.config['UPLOAD_DIR'])/audio_source
+                created_files.append(target)
+                audio_upload.save(target)
+            if request.form.get('clear_audio'):
+                audio_source=''
+            poster = video['poster']
+            cover = request.files.get('poster')
+            if cover and cover.filename:
+                cover.stream.seek(0, os.SEEK_END)
+                if cover.stream.tell() > 10 * 1024 * 1024:
+                    raise ValueError('Cover images must be under 10 MB.')
+                cover.stream.seek(0)
+                try:
+                    with Image.open(cover.stream) as img:
+                        if img.width * img.height > 20000000:
+                            raise ValueError('Use a cover image under 20 megapixels.')
+                        img = img.convert('RGB')
+                        img.thumbnail((2048, 2048))
+                        poster = 'upload-poster-' + secrets.token_hex(16) + '.webp'
+                        target = Path(app.config['UPLOAD_DIR']) / poster
+                        created_files.append(target)
+                        img.save(target, 'WEBP', quality=90)
+                except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+                    raise ValueError('Use a valid JPG, PNG or WebP cover image.')
+            active = 1 if request.form.get('active') else 0
+            db().execute('UPDATE videos SET title=?,person=?,caption=?,video_source=?,audio_source=?,poster=?,active=? WHERE id=?', (title, person, caption, source, audio_source, poster, active, video_id))
+            db().commit()
+            flash('Media and testimonial details saved.', 'success')
+        except (ValueError, OSError) as error:
+            for target in created_files:
+                target.unlink(missing_ok=True)
+            flash(str(error), 'error')
+        return redirect(url_for('owner_media'))
+
+    @app.route('/owner/settings', methods=['GET', 'POST'])
+    @admin_only
+    def owner_settings():
+        if request.method == 'POST':
+            for key in DEFAULTS:
+                value = request.form.get(key, '').strip()
+                if key.startswith('social_') and value:
+                    allowed = {'social_facebook': {'facebook.com','www.facebook.com','m.facebook.com'}, 'social_instagram': {'instagram.com','www.instagram.com'}, 'social_tiktok': {'tiktok.com','www.tiktok.com'}, 'social_youtube': {'youtube.com','www.youtube.com','youtu.be'}}
+                    try:
+                        parsed = urlsplit(value)
+                        valid = parsed.scheme == 'https' and parsed.hostname in allowed[key] and not parsed.username and not parsed.password and parsed.port in (None,443) and not any(ord(c)<33 for c in value)
+                    except ValueError:
+                        valid = False
+                    if not valid:
+                        flash('Use the full HTTPS profile link for the matching social platform.', 'error')
+                        return render_template('owner_settings.html', title='Store settings')
+                if len(value) > 5000 or (key == 'story_video' and value and (not value.startswith('https://') or len(value) > 1000)):
+                    flash('Use a direct HTTPS video URL and keep each field under 5,000 characters.', 'error')
+                    return render_template('owner_settings.html', title='Store settings')
+            for key in DEFAULTS:
+                db().execute('INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)', (key, request.form.get(key, '').strip()))
+            db().commit()
+            flash('Settings saved.', 'success')
+            return redirect(url_for('owner_settings'))
+        return render_template('owner_settings.html', title='Store settings')
+
+    @app.route('/owner/orders.csv')
+    @admin_only
+    def owner_export():
+        output = io.StringIO(newline='')
+        writer = csv.writer(output)
+        writer.writerow(['Order', 'Created (UTC)', 'Customer', 'Email', 'Phone', 'Fulfillment', 'Total (ZAR)', 'Status', 'Payment test'])
+        def safe(value):
+            value = str(value)
+            return "'" + value if value[:1] in ('=', '+', '-', '@', '\t', '\r', '\n') else value
+        for o in db().execute('SELECT o.*,e.payment_test FROM orders o JOIN order_extra e ON e.order_id=o.id ORDER BY o.id DESC'):
+            writer.writerow([f"ISZ-{o['id']:05d}", o['created_at'], safe(o['name']), safe(o['email']), safe(o['phone']), o['fulfillment'], f"{o['total']/100:.2f}", o['status'], 'Yes - simulated' if o['payment_test'] else 'No'])
+        return Response(output.getvalue(), mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=isazi-orders.csv'})
+
+    @app.get('/robots.txt')
+    def robots():
+        # Private transactional and owner pages should never be indexed.
+        return Response('User-agent: *\nDisallow: /owner\nDisallow: /cart\nDisallow: /checkout\nDisallow: /order/\nDisallow: /account\nDisallow: /agent\nDisallow: /track\nDisallow: /pay/\n', mimetype='text/plain')
+
+    @app.get('/health')
     def health():
-        return jsonify(status="ok")
+        db().execute('SELECT 1')
+        return {'status': 'ok', 'version': APP_VERSION, 'demo_mode':bool(app.config.get('DEMO_MODE')), 'demo_payments_enabled':bool(app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED'))}
 
-    @app.errorhandler(403)
-    def forbidden(err):
-        return render_template("error.html", title="Access denied", status=403, message=str(err.description)), 403
-
+    @app.errorhandler(400)
     @app.errorhandler(404)
-    def not_found(err):
-        return render_template("error.html", title="Not found", status=404, message="This page or item could not be found."), 404
+    @app.errorhandler(413)
+    def error_page(error):
+        return render_template('error.html', error=error, title='Please try again'), error.code
 
+    @app.cli.command('create-owner')
+    @click.password_option(confirmation_prompt=True)
+    def create_owner(password):
+        """Create or reset the single store owner password (never shipped in the code)."""
+        if len(password) < 16:
+            raise click.ClickException('Use at least 16 characters.')
+        db().execute('INSERT OR REPLACE INTO admins(id,password_hash) VALUES(1,?)', (generate_password_hash(password),))
+        db().execute('DELETE FROM login_attempts')
+        db().commit()
+        click.echo('Owner password saved. Sign in at /owner/login.')
+
+    @app.cli.command('init-db')
+    def init_db_command():
+        """Ensure the database exists; preserve existing records."""
+        initialize()
+        click.echo('Database ready. Existing data preserved.')
+
+    def initialize():
+        db().executescript(SCHEMA)
+        if 'audio_source' not in {row[1] for row in db().execute('PRAGMA table_info(videos)')}:
+            db().execute("ALTER TABLE videos ADD COLUMN audio_source TEXT NOT NULL DEFAULT ''")
+        for key, slot in HOME_IMAGE_SLOTS.items():
+            db().execute('INSERT OR IGNORE INTO home_images(key,filename) VALUES(?,?)', (key, slot[1]))
+        # Upgrade only the built-in backdrop; preserve custom owner-uploaded heroes.
+        db().execute("UPDATE home_images SET filename='hero-natural-meadow.webp',width=0,height=0 WHERE key='hero' AND filename IN ('demo-hero.webp','hero-landscape-composite.webp')")
+        for index, (kind, title, poster) in enumerate(VIDEO_SEEDS, 1):
+            db().execute('INSERT OR IGNORE INTO videos(id,kind,title,poster) VALUES(?,?,?,?)', (index, kind, title, poster))
+        for n, old_title in enumerate(['My Health Journey','Digestive Health','Men’s Health','Immune Support'],1):
+            db().execute("UPDATE videos SET title=? WHERE id=? AND kind='testimonial' AND title=? AND person='' AND caption=''", (f'Customer testimony {n}',n+1,old_title))
+        for key, value in DEFAULTS.items():
+            db().execute('INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)', (key, value))
+        # Apply the requested delivery threshold without resetting other store text.
+        db().execute("UPDATE settings SET value=replace(value,'R300','R600') WHERE key='delivery_note'")
+        if not db().execute('SELECT 1 FROM products LIMIT 1').fetchone():
+            for name, category, price, image_name in SEEDS:
+                db().execute('INSERT INTO products(name,category,price,description,image,stock) VALUES(?,?,?,?,?,?)',
+                             (name, category, price, 'Traditional herbal product from Isazi Herbal Shop. Ingredients, pack size and directions must be confirmed with our team before use. Product information is being finalised.', image_name, 0))
+        db().commit()
+
+    eco=register_ecosystem(app,db,admin_only)
+    demo=register_client_demo(app,db,eco)
+    with app.app_context():
+        initialize()
+        eco['initialize']()
+        demo['initialize']()
     return app
 
 
-def utcnow():
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-def cli():
-    parser = argparse.ArgumentParser(description="Isazi Agile Studio")
-    sub = parser.add_subparsers(dest="command")
-    init = sub.add_parser("init", help="Create database and initial admin account")
-    init.add_argument("--username", default="owner")
-    reset = sub.add_parser("reset-password", help="Reset an existing account password locally")
-    reset.add_argument("--username", default="owner")
-    server = sub.add_parser("serve", help="Run local development server")
-    server.add_argument("--host", default="127.0.0.1")
-    server.add_argument("--port", type=int, default=5000)
-    server.add_argument("--debug", action="store_true")
-    args = parser.parse_args()
-    app = create_app()
-    store = app.extensions["isazi_store"]
-    if args.command == "init":
-        username = args.username.strip().lower()
-        if not (3 <= len(username) <= 40 and username.replace("_", "").replace("-", "").isalnum()):
-            parser.error("Use a valid username (3–40 characters)")
-        with store.connect() as conn:
-            user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        if user_count:
-            print("Database exists and users are configured. Sign in to manage accounts.")
-            return
-        password = getpass.getpass("Choose owner password (12+ characters): ")
-        confirmation = getpass.getpass("Confirm password: ")
-        if len(password) < 12 or password != confirmation:
-            parser.error("Password needs 12+ characters and must match confirmation")
-        with store.connect() as conn:
-            conn.execute("INSERT INTO users (username,password_hash,role,enabled,created_at) VALUES (?,?,?,?,?)",
-                         (username,generate_password_hash(password),"admin",1,utcnow()))
-        print("Owner account created. Start the local server: python app.py serve")
-    elif args.command == "reset-password":
-        username = args.username.strip().lower()
-        with store.connect() as conn:
-            existing = conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
-        if not existing:
-            parser.error("Account not found")
-        password = getpass.getpass("New password (12+ characters): ")
-        confirmation = getpass.getpass("Confirm new password: ")
-        if len(password) < 12 or password != confirmation:
-            parser.error("Password needs 12+ characters and must match confirmation")
-        with store.connect() as conn:
-            conn.execute("UPDATE users SET password_hash=? WHERE username=?", (generate_password_hash(password),username))
-            conn.execute("DELETE FROM login_failures WHERE username=?", (username,))
-            conn.execute("INSERT INTO access_audit (username,event,created_at) VALUES (?,?,?)", (username, "Local password reset", utcnow()))
-        print("Password updated. Restart the app and sign in.")
-    else:
-        app.run(host=getattr(args,"host","127.0.0.1"), port=getattr(args,"port",5000),
-                debug=getattr(args,"debug",False))
-
-
-if __name__ == "__main__":
-    cli()
+app = create_app()
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=int(os.environ.get('PORT', 5000)), debug=False)
