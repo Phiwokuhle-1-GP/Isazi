@@ -29,3 +29,10 @@
 
 @media(max-width:760px){.nav .brand .brand-crest:not(.custom-crest) img{width:149px!important;height:38px;object-fit:fill}.nav .brand .brand-crest.custom-crest img{width:32px!important;height:38px;object-fit:contain}.category-shortcuts{scrollbar-width:thin;scrollbar-color:#abc5ab transparent}.category-shortcuts::-webkit-scrollbar{height:4px}.category-shortcuts::-webkit-scrollbar-thumb{background:#abc5ab;border-radius:4px}.no-js-menu{display:flex;flex-wrap:wrap;gap:8px;padding-block:8px}.no-js-menu a{padding:10px;min-height:44px}}
 @media(min-width:761px){.no-js-menu{display:none}}
+
+/* Mobile headline sits in the meadow between the original portraits. */
+@media(max-width:760px){
+ .hero-authentic .hero-copy{position:static;isolation:auto}
+ .hero-authentic .hero-copy-backdrop{display:none}
+ .hero-authentic .hero-copy h1{position:absolute;z-index:3;top:clamp(32px,10vw,76px);left:27%;width:46%;font-size:clamp(11px,3.15vw,22px);line-height:1.14;letter-spacing:-.2px;padding:4px 0;text-shadow:0 1px 4px #fff,0 0 10px #ffffffc9}
+}

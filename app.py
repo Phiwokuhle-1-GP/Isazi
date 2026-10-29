@@ -18,9 +18,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image, UnidentifiedImageError
 from ecosystem import register_ecosystem, valid_email
 from client_demo import register_client_demo
+from video_processing import transcode_upload
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.6'
+APP_VERSION = '2.6.7'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -231,7 +232,7 @@ def create_app(test_config=None):
 
     @app.route('/')
     def home():
-        products = db().execute('SELECT * FROM products WHERE active=1 ORDER BY id LIMIT 5').fetchall()
+        products = db().execute('SELECT * FROM products WHERE active=1 ORDER BY id LIMIT 6').fetchall()
         story = db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id LIMIT 1").fetchone()
         testimonials = db().execute("SELECT * FROM videos WHERE kind='testimonial' AND active=1 ORDER BY id").fetchall()
         return render_template('home.html', products=[customer_product(p) for p in products], story=story, testimonials=testimonials, title='Traditional herbal wellness')
@@ -626,6 +627,7 @@ def create_app(test_config=None):
             if not 2 <= len(title) <= 100 or len(person) > 100 or len(caption) > 500:
                 raise ValueError('Use a title of 2–100 characters, a name under 100 characters and a caption under 500 characters.')
             source = video['video_source']
+            mobile_source = video['mobile_video_source']
             remote = request.form.get('video_url', '').strip()
             if remote:
                 parsed = urlsplit(remote)
@@ -634,6 +636,7 @@ def create_app(test_config=None):
                 if not parsed.path.lower().endswith(('.mp4', '.webm')):
                     raise ValueError('Use a direct .mp4 or .webm file URL, not a YouTube or social media page.')
                 source = remote
+                mobile_source = ''
             upload = request.files.get('video')
             if upload and upload.filename:
                 upload.stream.seek(0, os.SEEK_END)
@@ -646,12 +649,11 @@ def create_app(test_config=None):
                 ext = Path(upload.filename).suffix.lower()
                 if not ((ext == '.mp4' and header[4:8] == b'ftyp') or (ext == '.webm' and header[:4] == b'\x1aE\xdf\xa3')):
                     raise ValueError('The file must be a valid MP4 or WebM video.')
-                source = 'upload-video-' + secrets.token_hex(16) + ext
-                target = Path(app.config['UPLOAD_DIR']) / source
-                created_files.append(target)
-                upload.save(target)
+                source, mobile_source = transcode_upload(upload, app.config['UPLOAD_DIR'])
+                created_files.extend(Path(app.config['UPLOAD_DIR']) / name for name in (source, mobile_source))
             if request.form.get('clear_video'):
                 source = ''
+                mobile_source = ''
             audio_source = video['audio_source']
             audio_remote = request.form.get('audio_url', '').strip()
             audio_upload = request.files.get('audio')
@@ -703,7 +705,7 @@ def create_app(test_config=None):
                 except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
                     raise ValueError('Use a valid JPG, PNG or WebP cover image.')
             active = 1 if request.form.get('active') else 0
-            db().execute('UPDATE videos SET title=?,person=?,caption=?,video_source=?,audio_source=?,poster=?,active=? WHERE id=?', (title, person, caption, source, audio_source, poster, active, video_id))
+            db().execute('UPDATE videos SET title=?,person=?,caption=?,video_source=?,mobile_video_source=?,audio_source=?,poster=?,active=? WHERE id=?', (title, person, caption, source, mobile_source, audio_source, poster, active, video_id))
             db().commit()
             flash('Media and testimonial details saved.', 'success')
         except (ValueError, OSError) as error:
@@ -790,6 +792,8 @@ def create_app(test_config=None):
             db().execute('ALTER TABLE products ADD COLUMN presentation_stock INTEGER NOT NULL DEFAULT 50')
         if 'audio_source' not in {row[1] for row in db().execute('PRAGMA table_info(videos)')}:
             db().execute("ALTER TABLE videos ADD COLUMN audio_source TEXT NOT NULL DEFAULT ''")
+        if 'mobile_video_source' not in {row[1] for row in db().execute('PRAGMA table_info(videos)')}:
+            db().execute("ALTER TABLE videos ADD COLUMN mobile_video_source TEXT NOT NULL DEFAULT ''")
         for key, slot in HOME_IMAGE_SLOTS.items():
             db().execute('INSERT OR IGNORE INTO home_images(key,filename) VALUES(?,?)', (key, slot[1]))
         # Upgrade only the built-in backdrop; preserve custom owner-uploaded heroes.

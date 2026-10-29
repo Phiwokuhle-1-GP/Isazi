@@ -26,7 +26,7 @@ if (videoDialog) {
       document.querySelector('#video-dialog-title').textContent = trigger.dataset.videoTitle;
       error.hidden = true;
       player.poster = trigger.dataset.videoPoster;
-      player.src = trigger.dataset.videoSrc;
+      player.src = window.matchMedia('(max-width: 760px)').matches && trigger.dataset.videoMobile ? trigger.dataset.videoMobile : trigger.dataset.videoSrc;
       videoDialog.showModal();
       player.play().catch(() => { /* Native controls remain available. */ });
     });
@@ -100,3 +100,24 @@ if(menuButton && mobileNavigation){
  mobileNavigation.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setMenu(false)));
  nav.addEventListener('keydown',event=>{if(event.key==='Escape' && menuButton.getAttribute('aria-expanded')==='true'){setMenu(false);menuButton.focus();}});
 }
+
+// Choose a light mobile rendition without downloading video before a user plays it.
+document.querySelectorAll('video[data-mobile-source]').forEach(player => {
+  if (player.dataset.mobileSource && window.matchMedia('(max-width: 760px)').matches) {
+    player.src = player.dataset.mobileSource;
+  }
+});
+document.querySelectorAll('form.media-edit').forEach(form => {
+  form.addEventListener('submit', () => {
+    const file = form.querySelector('input[name="video"]');
+    const button = form.querySelector('button[type="submit"], button.button');
+    const status = form.querySelector('.media-processing-status');
+    if (file && file.files.length) {
+      status.hidden = false;
+      status.textContent = 'Uploading and optimizing desktop and mobile video. Please keep this page open until saving finishes.';
+      form.setAttribute('aria-busy', 'true');
+      button.disabled = true;
+      button.textContent = 'Processing video…';
+    }
+  });
+});

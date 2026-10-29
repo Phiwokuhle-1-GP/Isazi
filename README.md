@@ -1,6 +1,8 @@
-# Isazi Herbal Shop — V2.6.6 Mobile & Fast Load
+# Isazi Herbal Shop — V2.6.7 Video Uploads & Mobile Hero
 
 One storefront, one owner backend and one database. Start START_WINDOWS.ps1. The compatibility launcher START_DEMO_WINDOWS.ps1 now starts this same site. Owner reset scripts also target this same store. Existing normal-store accounts, orders, uploads and real stock are preserved.
+
+New video uploads are converted before publishing to desktop 720p and mobile 480p MP4 versions. The mobile hero title now sits between the portraits at a smaller size. Featured products display six cards to complete the two-column mobile grid. See VIDEO_UPLOADS.md for upload limits and processing details.
 
 ## Dry-run behaviour
 
@@ -13,17 +15,17 @@ One storefront, one owner backend and one database. Start START_WINDOWS.ps1. The
 
 ## Update an existing Windows installation
 
-Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_6_Mobile_Fast.zip into Downloads:
+Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_7_Video_Transcoding.zip into Downloads:
 
 ```powershell
 cd "$HOME\Downloads"
-Expand-Archive ".\Isazi_Herbal_Shop_V2_6_6_Mobile_Fast.zip" -DestinationPath ".\Isazi_Mobile_266" -Force
-powershell -ExecutionPolicy Bypass -File ".\Isazi_Mobile_266\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
+Expand-Archive ".\Isazi_Herbal_Shop_V2_6_7_Video_Transcoding.zip" -DestinationPath ".\Isazi_Update_267" -Force
+powershell -ExecutionPolicy Bypass -File ".\Isazi_Update_267\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
 if ($LASTEXITCODE -ne 0) { throw "Update failed." }
 powershell -ExecutionPolicy Bypass -File ".\Isazi_Flask_Store\Isazi_Herbal_Shop_V2\START_WINDOWS.ps1"
 ```
 
-The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.6, demo_mode false and demo_payments_enabled true.
+The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.7, demo_mode false and demo_payments_enabled true.
 
 ## Owner and customer walkthrough
 
@@ -53,7 +55,7 @@ To disable simulated payments, stop the process and use START_WINDOWS.ps1 -LiveP
 
 All 74 automated checks pass. The suite uses temporary databases to verify shopping, access roles, uploads, simulated and verified payment handling, inventory, persistence, cancellations, reporting and existing records. Browser checks use Flask-rendered HTML; backend checks use Flask's test client. Windows PowerShell and live Render/provider connectivity must be verified on those systems. Source archives exclude databases, uploads and owner passwords.
 
-## Mobile and faster loading in V2.6.6
+## Mobile and faster loading in V2.6.7
 
 The phone layout has a collapsible accessible navigation menu, prominent search/cart/account controls, a compact swipeable category strip, a readable hero with its original photos, larger primary touch controls, phone-friendly forms and responsive order cards. Mobile quantity, gallery and menu interactions were checked in the browser. Customer and owner workflows remain the unified V2.6.5 journey.
 

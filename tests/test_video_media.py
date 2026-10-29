@@ -1,5 +1,11 @@
 import io
 import unittest
+import subprocess
+import tempfile
+import json
+from pathlib import Path
+from unittest.mock import patch
+from video_processing import ffmpeg_executable
 from PIL import Image
 import test_store
 from app import create_app
@@ -18,8 +24,8 @@ class MediaTests(unittest.TestCase):
             self.assertIn(('id="'+section+'"').encode(),response.data)
         self.assertEqual(response.data.count(b'class="testimonial-card"'),4)
         self.assertIn(b'#testimonials">Testimonials</a>',response.data)
-        self.assertEqual(response.headers['X-Isazi-Version'],'2.6.6')
-        self.assertEqual(self.client.get('/health').json['version'],'2.6.6')
+        self.assertEqual(response.headers['X-Isazi-Version'],'2.6.7')
+        self.assertEqual(self.client.get('/health').json['version'],'2.6.7')
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM videos')[0][0],5)
         self.assertEqual(self.client.get('/owner/media').status_code,302)
         self.assertEqual(self.post('/owner/media/2',{'title':'Unauthorised title'},follow=False).status_code,302)
@@ -45,18 +51,24 @@ class MediaTests(unittest.TestCase):
 
     def test_upload_storage_range_requests_and_cover_replacement(self):
         self.owner()
-        # MP4 container-signature fixture tests upload transport, not media decoding.
-        payload=b'\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2'+b'\x00'*64
+        payload=self.make_video()
         cover=io.BytesIO()
         Image.new('RGB',(160,100),'green').save(cover,'PNG')
         cover.seek(0)
         self.post('/owner/media/2',dict(title='Uploaded story',person='',caption='Test caption',active='on',video=(io.BytesIO(payload),'story.mp4'),poster=(cover,'cover.png')))
-        source,poster=self.fetch('SELECT video_source,poster FROM videos WHERE id=2')[0]
+        source,poster,mobile=self.fetch('SELECT video_source,poster,mobile_video_source FROM videos WHERE id=2')[0]
+        self.assertTrue(mobile.endswith('-mobile.mp4'))
+        desktop=(Path(self.tmp.name)/'uploads'/source).read_bytes()
+        self.assertLess(len(desktop),len(payload))
+        self.assertLess((Path(self.tmp.name)/'uploads'/mobile).stat().st_size,len(payload))
+        self.assertLess(desktop.index(b'moov'),desktop.index(b'mdat'))
+        for name in (source,mobile):
+            subprocess.run([ffmpeg_executable(),'-v','error','-i',str(Path(self.tmp.name)/'uploads'/name),'-f','null','-'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
         self.assertTrue(source.startswith('upload-video-'))
         self.assertTrue(poster.startswith('upload-poster-'))
         with self.client.get('/media/'+source,headers={'Range':'bytes=0-15'}) as response:
             self.assertEqual(response.status_code,206)
-            self.assertEqual(response.data,payload[:16])
+            self.assertEqual(response.data,desktop[:16])
             self.assertIn('video/mp4',response.content_type)
         with self.client.get('/media/'+poster) as response:
             self.assertEqual(response.status_code,200)
@@ -72,3 +84,58 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(self.fetch('SELECT video_source,active FROM videos WHERE id=2')[0],('',0))
         self.assertNotIn(b'Unique hidden story',self.client.get('/').data)
 
+
+    @staticmethod
+    def make_video(portrait=False):
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'source.mp4'
+            size='480x960' if portrait else '960x540'
+            subprocess.run([ffmpeg_executable(),'-nostdin','-v','error','-f','lavfi','-i',f'testsrc2=size={size}:rate=30',
+                            '-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','0.5',
+                            '-c:v','libx264','-qp','0','-threads','1','-c:a','aac',str(path)],check=True)
+            return path.read_bytes()
+
+    def test_corrupt_video_keeps_existing_and_no_partial_files(self):
+        self.owner()
+        self.post('/owner/media/2',dict(title='Original story',video_url='https://example.com/old.mp4',active='on'))
+        payload=b'\x00\x00\x00\x18ftypisom'+b'\x00'*64
+        response=self.post('/owner/media/2',dict(title='New story',video=(io.BytesIO(payload),'broken.mp4'),active='on'))
+        self.assertIn(b'could not be processed',response.data)
+        self.assertEqual(self.fetch('SELECT title,video_source FROM videos WHERE id=2')[0],('Original story','https://example.com/old.mp4'))
+        self.assertEqual(list((Path(self.tmp.name)/'uploads').glob('upload-video-*')),[])
+
+    def test_second_encode_timeout_keeps_previous_video(self):
+        self.owner()
+        self.post('/owner/media/2',dict(title='Original story',video_url='https://example.com/old.mp4',active='on'))
+        import video_processing
+        real_run=video_processing.subprocess.run
+        calls=[]
+        def run(command,**kwargs):
+            calls.append(command)
+            if len(calls)==2:
+                raise subprocess.TimeoutExpired(command,240)
+            return real_run(command,**kwargs)
+        payload=self.make_video()
+        with patch('video_processing.subprocess.run',side_effect=run):
+            response=self.post('/owner/media/2',dict(title='New story',video=(io.BytesIO(payload),'story.mp4'),active='on'))
+        self.assertIn(b'took too long',response.data)
+        self.assertEqual(self.fetch('SELECT video_source,mobile_video_source FROM videos WHERE id=2')[0],('https://example.com/old.mp4',''))
+        self.assertEqual(list((Path(self.tmp.name)/'uploads').glob('upload-video-*')),[])
+
+    def test_portrait_variants_playback_clear_and_restart(self):
+        self.owner()
+        self.post('/owner/media/1',dict(title='Portrait story',video=(io.BytesIO(self.make_video(True)),'story.mp4'),active='on'))
+        source,mobile=self.fetch('SELECT video_source,mobile_video_source FROM videos WHERE id=1')[0]
+        for name,expected in [(source,(360,720)),(mobile,(240,480))]:
+            # FFmpeg itself decodes both, and exposes the expected portrait dimensions.
+            result=subprocess.run([ffmpeg_executable(),'-hide_banner','-i',str(Path(self.tmp.name)/'uploads'/name),'-f','null','-'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            self.assertEqual(result.returncode,0)
+            self.assertIn(f'{expected[0]}x{expected[1]}'.encode(),result.stderr)
+            self.assertIn(b'h264',result.stderr)
+            self.assertIn(b'aac',result.stderr)
+        for url in ['/','/about','/owner/media']:
+            self.assertIn(mobile.encode(),self.client.get(url).data)
+        create_app({'TESTING':True,'DATABASE':self.db_path,'UPLOAD_DIR':str(self.tmp.name+'/uploads')})
+        self.assertEqual(self.fetch('SELECT mobile_video_source FROM videos WHERE id=1')[0][0],mobile)
+        self.post('/owner/media/1',dict(title='Portrait story',clear_video='on',active='on'))
+        self.assertEqual(self.fetch('SELECT video_source,mobile_video_source FROM videos WHERE id=1')[0],('',''))
