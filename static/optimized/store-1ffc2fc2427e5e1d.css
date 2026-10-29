@@ -383,3 +383,6 @@ header{background:#fff;border-bottom:1px solid var(--line)}
  .hero-authentic .hero-ctas{flex-direction:row;gap:6px;width:120%}
  .hero-authentic .hero-ctas .button{min-height:44px;flex:1;padding-inline:6px}
 }
+
+/* Start the phone homepage directly with the hero below the header. */
+@media(max-width:760px){.scroll-home .category-band{display:none}.scroll-home .hero-authentic{margin-top:14px}}

@@ -48,7 +48,7 @@ class ClientDemoTests(unittest.TestCase):
         self.assertEqual(self.query('SELECT stock FROM products',normal=True),[(0,)]*6)
         self.assertEqual(self.query('SELECT stock FROM products'),[(50,)]*6)
         self.assertEqual(self.client.get('/health').json['demo_mode'],True)
-        self.assertIn(b'CLIENT DEMO',self.client.get('/').data)
+        self.assertNotIn(b'class="demo-mode-bar"',self.client.get('/').data)
         normal=self.normal.test_client()
         self.assertFalse(normal.get('/health').json['demo_mode'])
         self.assertNotIn(b'CLIENT DEMO',normal.get('/?demo=1').data)

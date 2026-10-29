@@ -32,7 +32,7 @@ class PerformanceTests(unittest.TestCase):
             self.assertEqual(identity.data,original)
         page=self.client.get('/',headers={'Accept-Encoding':'gzip'})
         self.assertIn('no-store',page.headers['Cache-Control'])
-        self.assertIn(b'PAYMENT TEST MODE',gzip.decompress(page.data))
+        self.assertNotIn(b'class="demo-mode-bar"',gzip.decompress(page.data))
 
     def test_original_portrait_pixels_are_preserved_and_cards_are_smaller(self):
         root=Path(self.app.root_path);manifest=json.loads((root/'asset_manifest.json').read_text())

@@ -20,7 +20,7 @@ class MainPaymentModeTests(unittest.TestCase):
     def test_main_store_processes_six_simulations_without_sample_accounts_or_revenue(self):
         health=self.client.get('/health').json
         self.assertFalse(health['demo_mode']);self.assertTrue(health['demo_payments_enabled'])
-        self.assertIn(b'PAYMENT TEST MODE',self.client.get('/').data)
+        self.assertNotIn(b'class="demo-mode-bar"',self.client.get('/').data)
         self.assertNotIn(b'CLIENT DEMO',self.client.get('/').data)
         self.assertEqual(self.fetch('SELECT stock FROM products WHERE id=1')[0][0],20)
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM customers')[0][0],0)

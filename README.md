@@ -1,12 +1,14 @@
-# Isazi Herbal Shop — V2.6.9 Video Uploads & Mobile Hero
+# Isazi Herbal Shop — V2.6.10 Video Uploads & Mobile Hero
 
 One storefront, one owner backend and one database. Start START_WINDOWS.ps1. The compatibility launcher START_DEMO_WINDOWS.ps1 now starts this same site. Owner reset scripts also target this same store. Existing normal-store accounts, orders, uploads and real stock are preserved.
+
+The mobile category strip above the hero is hidden; desktop categories remain visible. The gold test-mode banner is removed from customer browsing pages.
 
 New video uploads are converted before publishing to desktop 720p and mobile 480p MP4 versions. The mobile hero keeps both original portraits, a smaller central title, the ribbon, description and buttons together over one continuous landscape. Featured products display six cards to complete the two-column mobile grid. See VIDEO_UPLOADS.md for upload limits and processing details.
 
 ## Dry-run behaviour
 
-- The main site shows PAYMENT TEST MODE. New products have 50 test units stored separately from real stock; active products with test stock show Add to Cart immediately. Test stock persists and reduces when test orders are submitted. Owner → Edit product can change test stock.
+- The main site uses simulated payments without a global test-mode banner. Checkout and receipts still identify simulated payments. New products have 50 test units stored separately from real stock; active products with test stock show Add to Cart immediately. Test stock persists and reduces when test orders are submitted. Owner → Edit product can change test stock.
 - Customers create a real customer account or sign in before adding to cart or checking out. A registration prompted by a product returns to that product. Shop → product → cart → checkout → six simulated payment methods → receipt → My Orders is complete.
 - Owners can browse/manage but cannot add to cart, change a cart, check out or complete a payment. Owner sessions block customer sign-in/registration until sign-out. Use another browser profile/incognito window for the customer when demonstrating both roles at once.
 - All dry-run orders and their customer links, quantities, payments and statuses are saved in the normal database. Owners see them in Recent orders, the saved-test-orders KPI, simulated receipts and Reports → Test orders / dry run. They can mark Ready/Completed or cancel. Cancellation restores the original stock pool once, including after changing payment mode.
@@ -15,17 +17,17 @@ New video uploads are converted before publishing to desktop 720p and mobile 480
 
 ## Update an existing Windows installation
 
-Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_9_Mobile_Landscape_Hero.zip into Downloads:
+Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_10_Clean_Mobile_Header.zip into Downloads:
 
 ```powershell
 cd "$HOME\Downloads"
-Expand-Archive ".\Isazi_Herbal_Shop_V2_6_9_Mobile_Landscape_Hero.zip" -DestinationPath ".\Isazi_Update_269" -Force
-powershell -ExecutionPolicy Bypass -File ".\Isazi_Update_269\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
+Expand-Archive ".\Isazi_Herbal_Shop_V2_6_10_Clean_Mobile_Header.zip" -DestinationPath ".\Isazi_Update_2610" -Force
+powershell -ExecutionPolicy Bypass -File ".\Isazi_Update_2610\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
 if ($LASTEXITCODE -ne 0) { throw "Update failed." }
 powershell -ExecutionPolicy Bypass -File ".\Isazi_Flask_Store\Isazi_Herbal_Shop_V2\START_WINDOWS.ps1"
 ```
 
-The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.9, demo_mode false and demo_payments_enabled true.
+The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.10, demo_mode false and demo_payments_enabled true.
 
 ## Owner and customer walkthrough
 
@@ -55,7 +57,7 @@ To disable simulated payments, stop the process and use START_WINDOWS.ps1 -LiveP
 
 All 74 automated checks pass. The suite uses temporary databases to verify shopping, access roles, uploads, simulated and verified payment handling, inventory, persistence, cancellations, reporting and existing records. Browser checks use Flask-rendered HTML; backend checks use Flask's test client. Windows PowerShell and live Render/provider connectivity must be verified on those systems. Source archives exclude databases, uploads and owner passwords.
 
-## Mobile and faster loading in V2.6.9
+## Mobile and faster loading in V2.6.10
 
 The phone layout has a collapsible accessible navigation menu, prominent search/cart/account controls, a compact swipeable category strip, a readable hero with its original photos, larger primary touch controls, phone-friendly forms and responsive order cards. Mobile quantity, gallery and menu interactions were checked in the browser. Customer and owner workflows remain the unified V2.6.5 journey.
 
