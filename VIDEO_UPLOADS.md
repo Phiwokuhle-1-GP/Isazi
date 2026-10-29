@@ -1,4 +1,4 @@
-# Video uploads (v2.6.13)
+# Video uploads (v2.6.14)
 
 In Owner → Videos & Testimonials, select an MP4 or WebM (maximum 250 MB), then Save. Keep the page open while it uploads and converts. The save publishes only after both complete files exist. Invalid files, processing timeouts or a busy encoder leave the previously published media unchanged. Only one conversion runs at a time per application process.
 
