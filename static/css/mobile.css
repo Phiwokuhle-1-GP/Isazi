@@ -85,3 +85,6 @@
  .footer-grid small{display:block;font-size:11px;line-height:1.5;margin-top:8px;color:#c5d6cc}
  footer .disclaimer{font-size:11px;line-height:1.65;margin-top:20px;margin-bottom:0;padding-top:16px;border-top:1px solid #ffffff26}
 }
+
+/* Keep the service information box on desktop only. */
+@media(max-width:760px){.service-strip{display:none}}
