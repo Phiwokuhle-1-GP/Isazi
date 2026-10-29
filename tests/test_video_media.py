@@ -24,8 +24,8 @@ class MediaTests(unittest.TestCase):
             self.assertIn(('id="'+section+'"').encode(),response.data)
         self.assertEqual(response.data.count(b'class="testimonial-card"'),4)
         self.assertIn(b'#testimonials">Testimonials</a>',response.data)
-        self.assertEqual(response.headers['X-Isazi-Version'],'2.6.7')
-        self.assertEqual(self.client.get('/health').json['version'],'2.6.7')
+        self.assertEqual(response.headers['X-Isazi-Version'],'2.6.9')
+        self.assertEqual(self.client.get('/health').json['version'],'2.6.9')
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM videos')[0][0],5)
         self.assertEqual(self.client.get('/owner/media').status_code,302)
         self.assertEqual(self.post('/owner/media/2',{'title':'Unauthorised title'},follow=False).status_code,302)
@@ -139,3 +139,21 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(self.fetch('SELECT mobile_video_source FROM videos WHERE id=1')[0][0],mobile)
         self.post('/owner/media/1',dict(title='Portrait story',clear_video='on',active='on'))
         self.assertEqual(self.fetch('SELECT video_source,mobile_video_source FROM videos WHERE id=1')[0],('',''))
+
+    def test_111mb_video_is_accepted_and_compressed_before_publishing(self):
+        self.owner()
+        # Valid MP4 with a large free box, not a mocked converter or fake signature.
+        import struct
+        payload=self.make_video()
+        size=111*1024*1024
+        with tempfile.TemporaryFile() as video:
+            video.write(payload)
+            video.write(struct.pack('>I4s',size-len(payload),b'free'))
+            video.truncate(size)
+            video.seek(0)
+            response=self.post('/owner/media/1',dict(title='Large uploaded story',video=(video,'large.mp4'),active='on'))
+        self.assertIn(b'Media and testimonial details saved.',response.data)
+        sources=self.fetch('SELECT video_source,mobile_video_source FROM videos WHERE id=1')[0]
+        for source in sources:
+            self.assertTrue(source.startswith('upload-video-'))
+            self.assertLess((Path(self.tmp.name)/'uploads'/source).stat().st_size,size)

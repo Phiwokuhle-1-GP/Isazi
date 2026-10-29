@@ -1,6 +1,6 @@
-# Video uploads (v2.6.7)
+# Video uploads (v2.6.9)
 
-In Owner → Videos & Testimonials, select an MP4 or WebM (maximum 100 MB), then Save. Keep the page open while it uploads and converts. The save publishes only after both complete files exist. Invalid files, processing timeouts or a busy encoder leave the previously published media unchanged. Only one conversion runs at a time per application process.
+In Owner → Videos & Testimonials, select an MP4 or WebM (maximum 250 MB), then Save. Keep the page open while it uploads and converts. The save publishes only after both complete files exist. Invalid files, processing timeouts or a busy encoder leave the previously published media unchanged. Only one conversion runs at a time per application process.
 
 Uploaded videos become H.264 MP4 with AAC stereo audio (when present), 30 fps and fast-start metadata for progressive playback. Desktop output fits within 1280 × 720; mobile output fits within 854 × 480. Portrait orientation and aspect ratio are preserved, without upscaling. Encoding uses CRF 27 and bounded video bitrates (desktop 1.8 Mb/s, mobile 750 kb/s), plus up to 96 kb/s audio. A file already compressed very efficiently may not become smaller.
 

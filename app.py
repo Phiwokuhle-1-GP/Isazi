@@ -21,7 +21,7 @@ from client_demo import register_client_demo
 from video_processing import transcode_upload
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.7'
+APP_VERSION = '2.6.9'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -94,7 +94,7 @@ def create_app(test_config=None):
     data_dir = ROOT / 'instance-client-demo' if demo_requested else Path(os.environ.get('DATA_DIR', ROOT / 'instance'))
     data_dir.mkdir(parents=True, exist_ok=True)
     app.config.update(DATABASE=str(data_dir / 'shop.sqlite3'), UPLOAD_DIR=str(data_dir / 'uploads'),
-                      MAX_CONTENT_LENGTH=112 * 1024 * 1024, SESSION_COOKIE_HTTPONLY=True,
+                      MAX_CONTENT_LENGTH=312 * 1024 * 1024, SESSION_COOKIE_HTTPONLY=True,
                       SESSION_COOKIE_SAMESITE='Lax', SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE') == '1',
                       PERMANENT_SESSION_LIFETIME=timedelta(hours=2), TESTING=False, CUSTOMER_CHECKOUT_REQUIRED=True, DEMO_MODE=demo_requested, DEMO_PAYMENTS_ENABLED=os.environ.get('DEMO_PAYMENTS_ENABLED')=='1')
     if test_config:
@@ -642,8 +642,8 @@ def create_app(test_config=None):
                 upload.stream.seek(0, os.SEEK_END)
                 size = upload.stream.tell()
                 upload.stream.seek(0)
-                if not 12 <= size <= 100 * 1024 * 1024:
-                    raise ValueError('Upload an MP4 or WebM video under 100 MB.')
+                if not 12 <= size <= 250 * 1024 * 1024:
+                    raise ValueError('Upload an MP4 or WebM video up to 250 MB.')
                 header = upload.stream.read(32)
                 upload.stream.seek(0)
                 ext = Path(upload.filename).suffix.lower()
