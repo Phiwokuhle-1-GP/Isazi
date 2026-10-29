@@ -1,8 +1,8 @@
-# V2.6.5 unified dry run
+# V2.6.6 unified dry run
 
 Use START_WINDOWS.ps1 for one shared store. START_DEMO_WINDOWS.ps1 is now an alias to it. Do not switch databases to demonstrate checkout.
 
-1. Open /health: version 2.6.5, demo_mode false, demo_payments_enabled true.
+1. Open /health: version 2.6.6, demo_mode false, demo_payments_enabled true.
 2. Open /owner/login in your normal browser profile. Test stock defaults to 50 per product and is editable in the product form. Real stock is separate.
 3. Open another browser profile/incognito window as a customer. Register at /account/register. Browse Shop, open a product and Add to Cart.
 4. Update quantities, check out, select Visa/Mastercard/Yoco/Ozow/PayFast/EFT and simulate successful payment. No money moves. Receipt and My Orders persist.

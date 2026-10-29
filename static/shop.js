@@ -53,7 +53,9 @@ document.querySelectorAll('[data-qty-delta]').forEach(button => button.addEventL
   input.dispatchEvent(new Event('change', {bubbles:true}));
 }));
 document.querySelectorAll('[data-product-image]').forEach(button => button.addEventListener('click', () => {
-  document.querySelector('#main-product-image').src = button.dataset.productImage;
+  const mainImage=document.querySelector('#main-product-image');
+  mainImage.removeAttribute('srcset');mainImage.removeAttribute('sizes');
+  mainImage.src=button.dataset.productImage;
 }));
 document.querySelectorAll('[data-tabs]').forEach(group => {
   const buttons = Array.from(group.querySelectorAll('[data-tab]'));
@@ -87,3 +89,14 @@ const testimonyAudio = document.querySelectorAll('.testimonial-audio');
 testimonyAudio.forEach(player => player.addEventListener('play', () => {
   testimonyAudio.forEach(other => { if (other !== player) other.pause(); });
 }));
+
+// Compact phone navigation; the full links remain usable when JavaScript is absent.
+const menuButton=document.querySelector('.nav-menu-toggle');
+const mobileNavigation=document.querySelector('#primary-navigation');
+if(menuButton && mobileNavigation){
+ const nav=menuButton.closest('.nav');nav.setAttribute('data-menu-ready','');
+ const setMenu=open=>{mobileNavigation.classList.toggle('is-open',open);menuButton.setAttribute('aria-expanded',String(open));menuButton.querySelector('.sr-only').textContent=open?'Close menu':'Open menu';};
+ menuButton.addEventListener('click',()=>setMenu(menuButton.getAttribute('aria-expanded')!=='true'));
+ mobileNavigation.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setMenu(false)));
+ nav.addEventListener('keydown',event=>{if(event.key==='Escape' && menuButton.getAttribute('aria-expanded')==='true'){setMenu(false);menuButton.focus();}});
+}

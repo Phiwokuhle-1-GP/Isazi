@@ -1,4 +1,4 @@
-# V2.6.5 Git/Render handoff
+# V2.6.6 Git/Render handoff
 
 The unified store, customer journey, test-stock behaviour and owner dry-run operation are documented in README.md and CLIENT_DEMO_GUIDE.md. This source includes all latest visuals/media controls. Customer accounts are required to buy; owners cannot purchase.
 
@@ -20,7 +20,7 @@ Enter and confirm a password of at least 16 characters. No owner password or run
 
 ## Accept the deployment
 
-Verify /health version 2.6.5, demo_mode false and demo_payments_enabled true. Sign into owner management. In a separate browser profile register a customer; open a product with test stock; add/update cart; check out; simulate payment; verify receipt/My Orders. In the owner profile verify that saved test order, update its status and inspect Reports → Test orders / dry run. Restart/redeploy and confirm orders/uploads remain. Cancel a test order and verify presentation stock restores once.
+Verify /health version 2.6.6, demo_mode false and demo_payments_enabled true. Sign into owner management. In a separate browser profile register a customer; open a product with test stock; add/update cart; check out; simulate payment; verify receipt/My Orders. In the owner profile verify that saved test order, update its status and inspect Reports → Test orders / dry run. Restart/redeploy and confirm orders/uploads remain. Cancel a test order and verify presentation stock restores once.
 
 No real payment/email is sent in payment test mode. Test orders are permanently labelled and excluded from real report totals, commissions, notifications and verified-purchase reviews. An existing real order cannot be marked paid through the simulator. Test orders cannot be sent to a live provider.
 
@@ -28,6 +28,8 @@ After the dry run set DEMO_PAYMENTS_ENABLED=0 and restart. Real stock is then en
 
 ## Source publication
 
-PUSH_GITHUB_WINDOWS.ps1 uses Downloads/Isazi_Git_265, validates RELEASE_FILES.json, pushes a backup branch and replaces source with a normal commit. Use the extracted package as source; apply the updater to the installed Downloads app separately. The .gitignore excludes runtime data, environment secrets, caches, ZIPs and update backups. Render may auto-deploy after push if enabled; verify its logs independently.
+PUSH_GITHUB_WINDOWS.ps1 uses Downloads/Isazi_Git_266, validates RELEASE_FILES.json, pushes a backup branch and replaces source with a normal commit. Use the extracted package as source; apply the updater to the installed Downloads app separately. The .gitignore excludes runtime data, environment secrets, caches, ZIPs and update backups. Render may auto-deploy after push if enabled; verify its logs independently.
 
 PowerShell and Render connectivity must be tested on their target systems. All backend verification here uses isolated temporary data; browser QA uses rendered Flask HTML.
+
+V2.6.6 adds responsive image assets, negotiated text compression, private HTML/public static cache handling and the phone layout. optimize_assets.py is invoked during build/start; keep it and asset_manifest.json with the source. PERFORMANCE_NOTES.md records the checks. No database migration/reset is required for this performance update.

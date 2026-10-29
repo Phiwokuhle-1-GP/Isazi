@@ -1,4 +1,4 @@
-# Isazi Herbal Shop — V2.6.5 Unified Customer Journey
+# Isazi Herbal Shop — V2.6.6 Mobile & Fast Load
 
 One storefront, one owner backend and one database. Start START_WINDOWS.ps1. The compatibility launcher START_DEMO_WINDOWS.ps1 now starts this same site. Owner reset scripts also target this same store. Existing normal-store accounts, orders, uploads and real stock are preserved.
 
@@ -13,17 +13,17 @@ One storefront, one owner backend and one database. Start START_WINDOWS.ps1. The
 
 ## Update an existing Windows installation
 
-Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_5_Unified_Journey.zip into Downloads:
+Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_6_Mobile_Fast.zip into Downloads:
 
 ```powershell
 cd "$HOME\Downloads"
-Expand-Archive ".\Isazi_Herbal_Shop_V2_6_5_Unified_Journey.zip" -DestinationPath ".\Isazi_Unified_265" -Force
-powershell -ExecutionPolicy Bypass -File ".\Isazi_Unified_265\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
+Expand-Archive ".\Isazi_Herbal_Shop_V2_6_6_Mobile_Fast.zip" -DestinationPath ".\Isazi_Mobile_266" -Force
+powershell -ExecutionPolicy Bypass -File ".\Isazi_Mobile_266\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
 if ($LASTEXITCODE -ne 0) { throw "Update failed." }
 powershell -ExecutionPolicy Bypass -File ".\Isazi_Flask_Store\Isazi_Herbal_Shop_V2\START_WINDOWS.ps1"
 ```
 
-The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.5, demo_mode false and demo_payments_enabled true.
+The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.6, demo_mode false and demo_payments_enabled true.
 
 ## Owner and customer walkthrough
 
@@ -41,7 +41,7 @@ Free delivery is strictly above R600. Automated rates remain collection free and
 
 ## Git and Render
 
-PUSH_GITHUB_WINDOWS.ps1 validates RELEASE_FILES.json and publishes from a separate Downloads/Isazi_Git_265 checkout to Phiwokuhle-1-GP/Isazi. It pushes a backup branch first, replaces tracked source in one regular commit and verifies main. No force push is used. Local customer databases/uploads/passwords are excluded. GitHub must authorize your local Git sign-in.
+PUSH_GITHUB_WINDOWS.ps1 validates RELEASE_FILES.json and publishes from a separate Downloads/Isazi_Git_266 checkout to Phiwokuhle-1-GP/Isazi. It pushes a backup branch first, replaces tracked source in one regular commit and verifies main. No force push is used. Local customer databases/uploads/passwords are excluded. GitHub must authorize your local Git sign-in.
 
 The Render blueprint keeps the existing service name and disk. render_start.sh supports the existing bash startup command and legacy secret/HTTPS variable names. The normal database is /var/data/shop.sqlite3; old portal data /var/data/isazi.sqlite3 remains separate. Create the shop owner via the Render Shell, not a committed password. See PRODUCTION_HANDOFF.md.
 
@@ -51,4 +51,14 @@ To disable simulated payments, stop the process and use START_WINDOWS.ps1 -LiveP
 
 ## Verification
 
-All 70 automated checks pass. The suite uses temporary databases to verify shopping, access roles, uploads, simulated and verified payment handling, inventory, persistence, cancellations, reporting and existing records. Browser checks use Flask-rendered HTML; backend checks use Flask's test client. Windows PowerShell and live Render/provider connectivity must be verified on those systems. Source archives exclude databases, uploads and owner passwords.
+All 74 automated checks pass. The suite uses temporary databases to verify shopping, access roles, uploads, simulated and verified payment handling, inventory, persistence, cancellations, reporting and existing records. Browser checks use Flask-rendered HTML; backend checks use Flask's test client. Windows PowerShell and live Render/provider connectivity must be verified on those systems. Source archives exclude databases, uploads and owner passwords.
+
+## Mobile and faster loading in V2.6.6
+
+The phone layout has a collapsible accessible navigation menu, prominent search/cart/account controls, a compact swipeable category strip, a readable hero with its original photos, larger primary touch controls, phone-friendly forms and responsive order cards. Mobile quantity, gallery and menu interactions were checked in the browser. Customer and owner workflows remain the unified V2.6.5 journey.
+
+Responsive WebP variants reduce delivery sizes while preserving original assets. The two original hero portraits are encoded losslessly with pixel equality checked. Small product/article images no longer request their full originals. User-uploaded images have cached bounded thumbnails; original uploads remain available. Videos/audio still use streaming range requests.
+
+Static fingerprinted assets can be cached for a year, including in payment test mode. Personalized HTML/CSRF pages remain private and uncached. Text responses negotiate gzip. The original five stylesheets plus phone refinements are served in one versioned bundle. The asset build runs automatically at Windows startup and Render build/start, skipping work when inputs are unchanged.
+
+See PERFORMANCE_NOTES.md for file-size measurements and validation limits. This update has not been deployed by creating the package; push it with the included Git script and verify the Render deployment.

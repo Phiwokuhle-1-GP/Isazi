@@ -18,8 +18,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image, UnidentifiedImageError
 from ecosystem import register_ecosystem, valid_email
 from client_demo import register_client_demo
+from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.5'
+APP_VERSION = '2.6.6'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -117,6 +118,7 @@ def create_app(test_config=None):
             pass
         secret = key_path.read_text().strip()
     app.secret_key = secret
+    fast_assets=install_performance(app,ROOT)
 
     def db():
         if 'db' not in g:
@@ -166,9 +168,12 @@ def create_app(test_config=None):
             return fn(*args, **kwargs)
         return wrapped
 
-    def image_url(name):
+    def image_url(name, width=1280):
         name = DEMO_REPLACEMENTS.get(name, name)
-        return url_for('uploaded', filename=name) if name.startswith('upload-') else url_for('static', filename='images/' + name)
+        return url_for('uploaded',filename=name,w=min((320,640,1280),key=lambda x:abs(x-width))) if name.startswith('upload-') else fast_assets['image'](name,width)
+
+    def image_srcset(name,widths=(320,640,1280)):
+        return fast_assets['srcset'](DEMO_REPLACEMENTS.get(name,name),widths)
 
     @app.template_filter('money')
     def money(cents):
@@ -180,7 +185,7 @@ def create_app(test_config=None):
     @app.context_processor
     def context():
         return dict(app_version=APP_VERSION, home_images=dict(db().execute('SELECT key,filename FROM home_images').fetchall()), settings=settings(), categories=CATEGORIES, csrf_token=csrf, image_url=image_url,
-                    video_url=video_url, cart_count=sum(session.get('cart', {}).values()))
+                    video_url=video_url, image_srcset=image_srcset, cart_count=sum(session.get('cart', {}).values()))
 
     def presentation_inventory():
         return bool(app.config.get('DEMO_PAYMENTS_ENABLED') and not app.config.get('DEMO_MODE'))
@@ -424,6 +429,11 @@ def create_app(test_config=None):
 
     @app.route('/media/<filename>')
     def uploaded(filename):
+        if request.args.get('w') and filename.lower().endswith(('.webp','.png','.jpg','.jpeg')):
+            try:width=int(request.args['w'])
+            except ValueError:abort(400)
+            directory,variant_name=upload_variant(app,filename,width)
+            return send_from_directory(directory,variant_name,conditional=True)
         return send_from_directory(app.config['UPLOAD_DIR'], filename)
 
     @app.route('/owner/login', methods=['GET', 'POST'])

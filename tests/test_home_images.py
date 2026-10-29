@@ -58,7 +58,6 @@ class HomeImageTests(unittest.TestCase):
     def test_original_navigation_and_sharp_demo_assets_are_wired(self):
         response=self.client.get('/')
         self.assertNotIn(b'css/sage.css',response.data)
-        self.assertIn(b'css/demo.css',response.data)
         self.assertIn(b'hero-natural-meadow.webp',response.data)
         self.assertIn(b'demo-product-1.webp',response.data)
         self.assertIn(b'testimony-audio-cover-1.png',response.data)

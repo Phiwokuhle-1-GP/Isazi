@@ -108,3 +108,5 @@ V2.6 demo-specific browser checks covered Product, Cart, Checkout, payment selec
 V2.6.4 main-store presentation: DEMO_PAYMENTS_ENABLED=1 enables six simulated methods without selecting the separate sample database. Orders created in this mode are permanently flagged, excluded from real report totals and commissions, and blocked from real PayFast checkout. Owner/customer sessions are exclusive. The Render blueprint enables this temporary mode; change it to 0 after the presentation. See PRODUCTION_HANDOFF.md.
 
 V2.6.5 supersedes the separate-demo launcher workflow: use START_WINDOWS.ps1 for one site/database. It provides persistent presentation stock, mandatory customer accounts, owner purchase blocking, saved test orders/receipts, and Reports scopes for real/test orders. See README.md for the current operating instructions. Existing real stock and earlier order stock pools are preserved.
+
+V2.6.6 performance/mobile update passes 74 checks; source-image variants, cache headers and text compression preserve registered checkout, owner restrictions, saved dry-run orders, reports and streaming. See PERFORMANCE_NOTES.md.

@@ -36,7 +36,7 @@ def register_client_demo(app, db, eco):
 
     @app.after_request
     def demo_cache_control(response):
-        if current_app.config.get('DEMO_MODE') or current_app.config.get('DEMO_PAYMENTS_ENABLED') or (request.endpoint and request.endpoint.startswith('demo.')):
+        if request.endpoint not in ('static','uploaded') and (current_app.config.get('DEMO_MODE') or current_app.config.get('DEMO_PAYMENTS_ENABLED') or (request.endpoint and request.endpoint.startswith('demo.'))):
             response.headers['Cache-Control']='no-store'
             response.headers['X-Robots-Tag']='noindex, nofollow'
         return response
