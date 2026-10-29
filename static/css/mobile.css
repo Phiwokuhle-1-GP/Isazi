@@ -101,3 +101,16 @@
  .scroll-home .promo-demo .button{min-height:44px;font-size:12px;padding:10px 14px}
  .scroll-home .promo-demo>img{width:100%;max-width:100%;height:auto;align-self:center;object-fit:contain}
 }
+
+/* Raise contact details into the space below Explore on phones. */
+@media(max-width:760px){
+ footer .footer-grid{row-gap:16px}
+ .footer-grid>div:nth-child(2){grid-column:1;grid-row:2}
+ .footer-grid>div:nth-child(3){grid-column:2;grid-row:2 / span 2}
+ .footer-grid>div:last-child{display:contents}
+ .footer-grid .footer-contact{grid-column:1;grid-row:3;align-self:start;padding-top:12px;border-top:1px solid #ffffff26}
+ .footer-grid .footer-contact a{font-size:15px;font-weight:700;min-height:44px;width:fit-content}
+ .footer-grid .footer-contact p{font-size:12px;line-height:1.5}
+ .footer-grid>div:last-child>.footer-socials{grid-column:1/-1;grid-row:4;padding-top:14px;border-top:1px solid #ffffff26;margin:0;gap:10px}
+ .footer-grid>div:last-child>small{grid-column:1/-1;grid-row:5;margin:0}
+}
