@@ -16,7 +16,7 @@ class StoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.db_path = str(Path(self.tmp.name) / 'test.sqlite3')
-        self.app = create_app({'TESTING': True, 'DATABASE': self.db_path, 'UPLOAD_DIR': str(Path(self.tmp.name) / 'uploads')})
+        self.app = create_app({'TESTING': True, 'CUSTOMER_CHECKOUT_REQUIRED':False, 'DATABASE': self.db_path, 'UPLOAD_DIR': str(Path(self.tmp.name) / 'uploads')})
         self.app.secret_key = 'test-only-key'
         self.client = self.app.test_client()
         with sqlite3.connect(self.db_path) as db:
@@ -40,6 +40,8 @@ class StoreTests(unittest.TestCase):
         self.post('/owner/login', {'password': 'test-password-long-enough'})
 
     def order(self, product_id=1, quantity=1, **overrides):
+        with self.client.session_transaction() as s:owner_signed_in=bool(s.get('admin'))
+        if owner_signed_in:self.post('/owner/logout')
         self.post(f'/cart/add/{product_id}', {'quantity': str(quantity)})
         self.client.get('/checkout')
         with self.client.session_transaction() as session:

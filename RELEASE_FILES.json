@@ -1,7 +1,7 @@
 [
   {
     "path": ".env.example",
-    "sha256": "19d61d13320bd56b67d8c55917ee15fb77f407592c45f83f9e18772d37d0e66c"
+    "sha256": "c5600fa073217614d858403a9dda07b6fc6038dd37b26052c635f1d8cd82dab3"
   },
   {
     "path": ".gitignore",
@@ -9,11 +9,11 @@
   },
   {
     "path": "APPLY_UPDATE.ps1",
-    "sha256": "605a2806438410e575f744d3355dc1c13c1ba63b7be6a669bfb0192637ce0a89"
+    "sha256": "50d01dc661d5fc345d9da8dd1ee9041a7ce63bb9af1782d211a25b0dc65d87c0"
   },
   {
     "path": "CLIENT_DEMO_GUIDE.md",
-    "sha256": "a615ada7546b745b0ba0d9de75fb693a03a80a3a39a5cf3354a317b010ca7a0c"
+    "sha256": "f3bef23a4812f7c9004604336ab51f14b4378361a939088bcf61696e7ed129e7"
   },
   {
     "path": "CREATE_OWNER.ps1",
@@ -25,15 +25,15 @@
   },
   {
     "path": "ECOSYSTEM_SETUP.md",
-    "sha256": "c3808c50cf133525940f052a1d79711acdafc05e4230fe69d0cb18db05e11e1b"
+    "sha256": "df9824f96ddea82fd9acc0c3884d47117db3b49a1edc8ad6fac7ce0695392332"
   },
   {
     "path": "PRODUCTION_HANDOFF.md",
-    "sha256": "2247f71e99405e7174f45ed98331b36b84edde72fb0e43ad03d3f0950d6c89c5"
+    "sha256": "2062365a6568211f302a1d66db85474a909daeb0a7cd66d2c14fc2be059d06fd"
   },
   {
     "path": "PUSH_GITHUB_WINDOWS.ps1",
-    "sha256": "bb481992ca018164bb640b4a20ef16e3fa25787a6c296c13f4bb8b83121b7665"
+    "sha256": "41b9fabb280be74f01bc6edaaa859d1357837697d99eb91322d7025f780594f0"
   },
   {
     "path": "Procfile",
@@ -41,23 +41,23 @@
   },
   {
     "path": "README.md",
-    "sha256": "56118ab5358fda42ae96aaee4047dce842d586201b4fd403ed737dbc57f8eb60"
+    "sha256": "6442e26fec8998ec14b14de5e91664d76fdb797757551e5193fc4bb6519e16cd"
   },
   {
     "path": "RESET_OWNER_WINDOWS.ps1",
-    "sha256": "3ff7d9b9429e92e3b38b1f3a2de4dd9e3c2d6a0817f1eaba92e668dcd2ff404d"
+    "sha256": "28780be0f02d6a1b8d8cfb875d8e64c13b128ecda633a408aefe329dc6031790"
   },
   {
     "path": "START_DEMO_WINDOWS.ps1",
-    "sha256": "6a46f37dcb21c0719996745517536a4ef813f55d7128be9118dd7b8d5ad1d016"
+    "sha256": "fe31cd5d952d5b673ee1f02dc0f235510e6112e554de8dd010396579e70b520b"
   },
   {
     "path": "START_WINDOWS.ps1",
-    "sha256": "6572636f3c6e57fe2d27eea9dbc118c5bd2f94564814b667be61b656e994a455"
+    "sha256": "ae3050f146e7eb5f6692008cff8f15a7a52bd86aee4d62543d081e18bad54441"
   },
   {
     "path": "app.py",
-    "sha256": "fbedc07f5ec52bf4999479afd940c66d4da23f8cbe53715ff9b867b5af1cacaf"
+    "sha256": "3471cf41aaa35cca5dd5c0c415ac5d7462740581fb4d96e6ee007094d692582b"
   },
   {
     "path": "client_demo.py",
@@ -65,7 +65,7 @@
   },
   {
     "path": "ecosystem.py",
-    "sha256": "c45c511ccf03d7fc6cad1acb325e8aa6a69d5a59d1acdcf371c83ae8809b0508"
+    "sha256": "a67e4ddaa63d2594c4fdff0dd7871dc8e7d4cce9a32f5ed88ecb2e406c67039c"
   },
   {
     "path": "payment_gateway.py",
@@ -309,7 +309,7 @@
   },
   {
     "path": "templates/_products.html",
-    "sha256": "43e614758e4a01bcd0d101600cc40584189cd502245905419b16e6840f397a8e"
+    "sha256": "6a07a207046c94e0d698e8ae7c76973dc8fe9f643889686329a108f9debea0ea"
   },
   {
     "path": "templates/_social_links.html",
@@ -389,7 +389,7 @@
   },
   {
     "path": "templates/owner.html",
-    "sha256": "204ca275d7db05c37c39575b672dffda805ca1cc6413f4485c5fb94e8f9acd8e"
+    "sha256": "2a8d8c5a2359c2df43f57bd4ea245e9540313e7190344e7e940931061906a8b1"
   },
   {
     "path": "templates/owner_agents.html",
@@ -425,7 +425,7 @@
   },
   {
     "path": "templates/owner_product.html",
-    "sha256": "59502691e221487710919456ca6cf545a1e38658145a0da7c9f4400af89800f3"
+    "sha256": "07b40f747fc55e2ef1c21d0efea697a5d7e21c411d7e5a681530d352df734edb"
   },
   {
     "path": "templates/owner_promotions.html",
@@ -433,7 +433,7 @@
   },
   {
     "path": "templates/owner_reports.html",
-    "sha256": "54142af3264c7178733874ddf55c40a232ce17a6e60fe29fa96af2ec4e8652da"
+    "sha256": "2da65318348d80ffa43f4504ff6790e5297986654f8300eeb429be17fd7bb35a"
   },
   {
     "path": "templates/owner_reviews.html",
@@ -457,7 +457,7 @@
   },
   {
     "path": "templates/product.html",
-    "sha256": "65893e87c8418ae5d8b1b944f616532fead182d3dae4cd700f77b685a56429f4"
+    "sha256": "84bab2c61b50cfe2d2bb49d187305825eb10e4a3ec0ab2a90489c427215e0351"
   },
   {
     "path": "templates/shop.html",
@@ -489,7 +489,7 @@
   },
   {
     "path": "tests/test_main_payment_mode.py",
-    "sha256": "f7f030bb5b21e1148cca2f03dd3a78d7151b42fb64395bf9e00bd8fe44bb959a"
+    "sha256": "163c2f2cf774dc6ede569e5ae7c272d4b1f50538efceb7bb6ddd363efc3fc1af"
   },
   {
     "path": "tests/test_normal_release.py",
@@ -497,11 +497,15 @@
   },
   {
     "path": "tests/test_store.py",
-    "sha256": "e498c651aca4680c88a2b82300aacc6452423a0a455047e1c738f2ad194d475f"
+    "sha256": "4578f77d68ca28adb62b607c306561ceee70f99db9d91ed8d4ffec26ef15e46c"
+  },
+  {
+    "path": "tests/test_unified_journey.py",
+    "sha256": "3c270f20953a5bd6229a7adb8342cee4422f3ffbb194fd420550184dae51f7e3"
   },
   {
     "path": "tests/test_video_media.py",
-    "sha256": "ee75caab4780374208738eb06d62d8d101f15d7b62030ae598bd88aad95a7ef4"
+    "sha256": "e5aae63d73642910078ba1051704d002e761d807225d1f9210f185208b5c3b0d"
   },
   {
     "path": "wsgi.py",

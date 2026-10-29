@@ -47,6 +47,7 @@ class MainPaymentModeTests(unittest.TestCase):
         self.assertIn(b'Yes - simulated',self.client.get('/owner/orders.csv').data)
 
     def test_switch_off_and_existing_real_order_are_protected(self):
+        self.post('/account/register',dict(name='Main Customer',email='main@example.com',phone='0601234567',password='main-customer-password',confirm='main-customer-password',consent='on'))
         self.app.config['DEMO_PAYMENTS_ENABLED']=False
         self.order(quantity=1)
         token=self.fetch('SELECT token FROM orders')[0][0]

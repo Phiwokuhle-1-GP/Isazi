@@ -176,6 +176,8 @@ def register_ecosystem(app, db, admin_only):
         connection.execute('INSERT INTO order_extra(order_id,customer_id,discount,agent_id,agent_code,rate_bps) VALUES(?,?,?,?,?,?)', (order_id,customer['id'] if customer else None,discount,agent['id'] if agent else None,agent['code'] if agent else '',agent['rate_bps'] if agent else 0))
         if app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED'):
             connection.execute('UPDATE order_extra SET payment_test=1 WHERE order_id=?',(order_id,))
+            if not app.config.get('DEMO_MODE'):
+                connection.execute("UPDATE order_extra SET stock_pool='presentation' WHERE order_id=?",(order_id,))
         if coupon and coupon['coupon']:
             connection.execute('INSERT INTO order_coupons(order_id,coupon_id,discount) VALUES(?,?,?)',(order_id,coupon['coupon']['id'],discount))
         queue_update(connection,order_id,'created:'+str(order_id),'Your order has been received. Payment and delivery will be confirmed by our team.')
@@ -192,6 +194,8 @@ def register_ecosystem(app, db, admin_only):
 
     def initialize():
         db().executescript(SCHEMA)
+        if 'stock_pool' not in {row[1] for row in db().execute('PRAGMA table_info(order_extra)')}:
+            db().execute("ALTER TABLE order_extra ADD COLUMN stock_pool TEXT NOT NULL DEFAULT 'store'")
         if 'payment_test' not in {row[1] for row in db().execute('PRAGMA table_info(order_extra)')}:
             db().execute('ALTER TABLE order_extra ADD COLUMN payment_test INTEGER NOT NULL DEFAULT 0')
         db().execute('INSERT OR IGNORE INTO order_extra(order_id) SELECT id FROM orders')
@@ -260,9 +264,13 @@ def register_ecosystem(app, db, admin_only):
         return wrapped
 
     def customer_session(customer):
-        retained={key:session[key] for key in ('cart','coupon','referral','referral_at') if key in session}
+        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product') if key in session}
         session.clear();session.update(retained)
         session['customer_id']=customer['id'];session['customer_version']=customer['auth_version'];session.permanent=True
+
+    def customer_destination():
+        product_id=session.pop('after_auth_product',None)
+        return url_for('product',product_id=product_id) if isinstance(product_id,int) else url_for('eco.customer_account')
 
     @bp.route('/account/register',methods=['GET','POST'])
     def customer_register():
@@ -278,7 +286,7 @@ def register_ecosystem(app, db, admin_only):
                     customer_id=db().execute('INSERT INTO customers(name,email,phone,password_hash) VALUES(?,?,?,?)',(name,email,phone,generate_password_hash(password))).lastrowid
                     db().commit();failure(key)
                     customer_session(db().execute('SELECT * FROM customers WHERE id=?',(customer_id,)).fetchone())
-                    return redirect(url_for('eco.customer_account'))
+                    return redirect(customer_destination())
                 except sqlite3.IntegrityError:
                     db().rollback();failure(key);flash('Unable to create an account with those details. Try signing in or contact the team.','error')
         return render_template('customer_register.html',title='Create your account')
@@ -293,7 +301,7 @@ def register_ecosystem(app, db, admin_only):
             customer=db().execute('SELECT * FROM customers WHERE email=? COLLATE NOCASE AND active=1',(request.form.get('email','').strip(),)).fetchone()
             if customer and check_password_hash(customer['password_hash'],request.form.get('password','')):
                 db().execute('DELETE FROM login_attempts WHERE ip=?',(key,));db().commit();customer_session(customer)
-                return redirect(url_for('eco.customer_account'))
+                return redirect(customer_destination())
             failure(key);flash('Unable to sign in. Check your email and password.','error')
         return render_template('customer_login.html',title='Customer sign in')
 
@@ -307,6 +315,8 @@ def register_ecosystem(app, db, admin_only):
         orders=db().execute('SELECT o.*,e.delivery_status,e.payment_test FROM orders o JOIN order_extra e ON e.order_id=o.id WHERE e.customer_id=? ORDER BY o.id DESC',(customer['id'],)).fetchall()
         addresses=db().execute('SELECT * FROM customer_addresses WHERE customer_id=? ORDER BY id DESC',(customer['id'],)).fetchall()
         saved=db().execute('SELECT p.* FROM products p JOIN saved_products s ON s.product_id=p.id WHERE s.customer_id=? AND p.active=1 ORDER BY p.name',(customer['id'],)).fetchall()
+        if app.config.get('DEMO_PAYMENTS_ENABLED') and not app.config.get('DEMO_MODE'):
+            saved=[dict(p,stock=p['presentation_stock']) for p in map(dict,saved)]
         return render_template('customer_account.html',orders=orders,addresses=addresses,saved=saved,title='My account')
 
     @bp.post('/account/details')
@@ -685,14 +695,20 @@ def register_ecosystem(app, db, admin_only):
                     abort(400,'Use YYYY-MM-DD dates.')
         if start and end and start>end:
             abort(400,'Start date must precede end date.')
-        params=(start,start,end,end)
-        orders=db().execute("SELECT o.*,COALESCE((SELECT SUM(p.amount) FROM payments_received p WHERE p.order_id=o.id),0) AS received,COALESCE((SELECT SUM(r.goods+r.shipping+r.extra) FROM refunds r WHERE r.order_id=o.id),0) AS refunded FROM orders o WHERE o.id NOT IN (SELECT order_id FROM order_extra WHERE payment_test=1) AND (?='' OR date(o.created_at)>=?) AND (?='' OR date(o.created_at)<=?) ORDER BY o.id DESC",params).fetchall()
+        scope=request.args.get('scope','real')
+        if scope not in ('real','test'):
+            abort(400,'Choose real or test orders.')
+        params=(1 if scope=='test' else 0,start,start,end,end)
+        orders=db().execute("SELECT o.*,COALESCE((SELECT SUM(p.amount) FROM payments_received p WHERE p.order_id=o.id),0) AS received,COALESCE((SELECT SUM(r.goods+r.shipping+r.extra) FROM refunds r WHERE r.order_id=o.id),0) AS refunded FROM orders o WHERE o.id IN (SELECT order_id FROM order_extra WHERE payment_test=?) AND (?='' OR date(o.created_at)>=?) AND (?='' OR date(o.created_at)<=?) ORDER BY o.id DESC",params).fetchall()
         stats=dict(orders=len(orders),received=sum(o['received'] for o in orders),refunded=sum(o['refunded'] for o in orders),pending=sum(o['status']=='Awaiting confirmation' for o in orders))
         stats['net']=stats['received']-stats['refunded']
         monthly={}
         for order in orders:
             month=order['created_at'][:7];monthly[month]=monthly.get(month,0)+order['received']-order['refunded']
-        stock=db().execute('SELECT * FROM products WHERE active=1 AND stock<=5 ORDER BY stock,name').fetchall()
+        stock_column='presentation_stock' if scope=='test' else 'stock'
+        stock=db().execute(f'SELECT * FROM products WHERE active=1 AND {stock_column}<=5 ORDER BY {stock_column},name').fetchall()
+        if scope=='test':
+            stock=[dict(p,stock=p['presentation_stock']) for p in map(dict,stock)]
         statuses={}
         for order in orders:
             statuses[order['status']]=statuses.get(order['status'],0)+1
@@ -701,7 +717,7 @@ def register_ecosystem(app, db, admin_only):
             for o in orders:
                 writer.writerow([f"ISZ-{o['id']:05d}",o['created_at'],o['status'],f"{o['total']/100:.2f}",f"{o['received']/100:.2f}",f"{o['refunded']/100:.2f}",f"{(o['received']-o['refunded'])/100:.2f}"])
             return Response(output.getvalue(),mimetype='text/csv',headers={'Content-Disposition':'attachment; filename=isazi-financial-report.csv'})
-        return render_template('owner_reports.html',stats=stats,monthly=sorted(monthly.items()),statuses=statuses,stock=stock,start=start,end=end,title='Store reports')
+        return render_template('owner_reports.html',stats=stats,monthly=sorted(monthly.items()),statuses=statuses,stock=stock,start=start,end=end,scope=scope,title='Store reports')
 
     @bp.post('/owner/order/<int:order_id>/delivery')
     @admin_only

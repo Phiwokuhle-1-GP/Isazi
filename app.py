@@ -19,7 +19,7 @@ from PIL import Image, UnidentifiedImageError
 from ecosystem import register_ecosystem, valid_email
 from client_demo import register_client_demo
 
-APP_VERSION = '2.6.4'
+APP_VERSION = '2.6.5'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -94,7 +94,7 @@ def create_app(test_config=None):
     app.config.update(DATABASE=str(data_dir / 'shop.sqlite3'), UPLOAD_DIR=str(data_dir / 'uploads'),
                       MAX_CONTENT_LENGTH=112 * 1024 * 1024, SESSION_COOKIE_HTTPONLY=True,
                       SESSION_COOKIE_SAMESITE='Lax', SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE') == '1',
-                      PERMANENT_SESSION_LIFETIME=timedelta(hours=2), TESTING=False, DEMO_MODE=demo_requested, DEMO_PAYMENTS_ENABLED=os.environ.get('DEMO_PAYMENTS_ENABLED')=='1')
+                      PERMANENT_SESSION_LIFETIME=timedelta(hours=2), TESTING=False, CUSTOMER_CHECKOUT_REQUIRED=True, DEMO_MODE=demo_requested, DEMO_PAYMENTS_ENABLED=os.environ.get('DEMO_PAYMENTS_ENABLED')=='1')
     if test_config:
         app.config.update(test_config)
     if app.config.get('DEMO_MODE'):
@@ -182,18 +182,37 @@ def create_app(test_config=None):
         return dict(app_version=APP_VERSION, home_images=dict(db().execute('SELECT key,filename FROM home_images').fetchall()), settings=settings(), categories=CATEGORIES, csrf_token=csrf, image_url=image_url,
                     video_url=video_url, cart_count=sum(session.get('cart', {}).values()))
 
+    def presentation_inventory():
+        return bool(app.config.get('DEMO_PAYMENTS_ENABLED') and not app.config.get('DEMO_MODE'))
+
+    def customer_product(row):
+        if row and presentation_inventory():
+            row=dict(row);row['stock']=row['presentation_stock']
+        return row
+
+    @app.before_request
+    def purchasing_role():
+        purchase_endpoints={'cart_add','cart_update','cart_remove','checkout','demo.complete','eco.pay'}
+        if session.get('admin') and request.endpoint in purchase_endpoints:
+            abort(403,'Owners cannot purchase. Sign out and use a customer account, or open a separate browser profile.')
+        if request.endpoint in {'cart_add','checkout'} and app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not app.config.get('DEMO_MODE') and not eco['current_customer']():
+            if request.endpoint=='cart_add':
+                session['after_auth_product']=request.view_args['product_id']
+            flash('Create a customer account or sign in to continue shopping.','success')
+            return redirect(url_for('eco.customer_register'))
+
     def get_product(product_id, active=True):
         row = db().execute('SELECT * FROM products WHERE id=?' + (' AND active=1' if active else ''), (product_id,)).fetchone()
         if not row:
             abort(404)
-        return row
+        return customer_product(row) if active else row
 
     def cart_lines():
         lines = []
         for key, qty in session.get('cart', {}).items():
             product = db().execute('SELECT * FROM products WHERE id=? AND active=1', (key,)).fetchone()
             if product:
-                lines.append(dict(product=product, quantity=qty, total=qty * product['price']))
+                lines.append(dict(product=customer_product(product), quantity=qty, total=qty * product['price']))
         return lines
 
     def bounded_int(raw, low=1, high=99):
@@ -210,7 +229,7 @@ def create_app(test_config=None):
         products = db().execute('SELECT * FROM products WHERE active=1 ORDER BY id LIMIT 5').fetchall()
         story = db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id LIMIT 1").fetchone()
         testimonials = db().execute("SELECT * FROM videos WHERE kind='testimonial' AND active=1 ORDER BY id").fetchall()
-        return render_template('home.html', products=products, story=story, testimonials=testimonials, title='Traditional herbal wellness')
+        return render_template('home.html', products=[customer_product(p) for p in products], story=story, testimonials=testimonials, title='Traditional herbal wellness')
 
     @app.route('/shop')
     def shop():
@@ -226,7 +245,7 @@ def create_app(test_config=None):
         sql += {'price-low': ' ORDER BY price,id', 'price-high': ' ORDER BY price DESC,id', 'name': ' ORDER BY name'}.get(request.args.get('sort'), ' ORDER BY id')
         category_counts={row['category']:row['count'] for row in db().execute('SELECT category,COUNT(*) AS count FROM products WHERE active=1 GROUP BY category')}
         ratings={row['product_id']:row for row in db().execute("SELECT product_id,COUNT(*) AS count,AVG(rating) AS average FROM product_reviews WHERE status='Published' GROUP BY product_id")}
-        return render_template('shop.html', products=db().execute(sql, args).fetchall(), query=query, category=category,category_counts=category_counts,all_count=sum(category_counts.values()),rating_summaries=ratings,title='Shop herbal products')
+        return render_template('shop.html', products=[customer_product(p) for p in db().execute(sql, args).fetchall()], query=query, category=category,category_counts=category_counts,all_count=sum(category_counts.values()),rating_summaries=ratings,title='Shop herbal products')
 
     @app.route('/product/<int:product_id>')
     def product(product_id):
@@ -325,7 +344,8 @@ def create_app(test_config=None):
                     for line in lines:
                         p = get_product(line['product']['id'])
                         qty = line['quantity']
-                        result = connection.execute('UPDATE products SET stock=stock-? WHERE id=? AND stock>=? AND active=1', (qty, p['id'], qty))
+                        stock_column='presentation_stock' if presentation_inventory() else 'stock'
+                        result = connection.execute(f'UPDATE products SET {stock_column}={stock_column}-? WHERE id=? AND {stock_column}>=? AND active=1', (qty, p['id'], qty))
                         if result.rowcount != 1:
                             raise ValueError(f"{p['name']} is no longer available in that quantity. Please update your cart.")
                         line['product'] = p
@@ -439,9 +459,10 @@ def create_app(test_config=None):
     def owner():
         orders = db().execute('SELECT o.*,e.payment_test FROM orders o JOIN order_extra e ON e.order_id=o.id ORDER BY o.id DESC LIMIT 200').fetchall()
         counts = db().execute("SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status IN ('Paid','Ready','Completed') THEN total ELSE 0 END),0) AS confirmed, SUM(CASE WHEN status='Awaiting confirmation' THEN 1 ELSE 0 END) AS pending FROM orders WHERE id NOT IN (SELECT order_id FROM order_extra WHERE payment_test=1)").fetchone()
+        test_counts=db().execute("SELECT COUNT(*) AS orders,COALESCE((SELECT SUM(p.amount) FROM payments_received p JOIN order_extra x ON x.order_id=p.order_id WHERE x.payment_test=1),0) AS received FROM order_extra WHERE payment_test=1").fetchone()
         products = db().execute('SELECT * FROM products ORDER BY id').fetchall()
         enquiries = db().execute('SELECT * FROM enquiries ORDER BY id DESC LIMIT 100').fetchall()
-        return render_template('owner.html', orders=orders, counts=counts, products=products, enquiries=enquiries, title='Owner dashboard')
+        return render_template('owner.html', orders=orders, counts=counts, test_counts=test_counts, products=products, enquiries=enquiries, title='Owner dashboard')
 
     @app.route('/owner/product/new', methods=['GET', 'POST'])
     @app.route('/owner/product/<int:product_id>', methods=['GET', 'POST'])
@@ -478,12 +499,17 @@ def create_app(test_config=None):
                             im.save(Path(app.config['UPLOAD_DIR']) / image_name, 'WEBP', quality=88)
                     except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
                         raise ValueError('Upload a valid JPG, PNG or WebP image.')
+                presentation_stock=int(request.form.get('presentation_stock',p['presentation_stock'] if p else 50))
+                if not 0<=presentation_stock<=100000:
+                    raise ValueError('Enter test stock between 0 and 100,000.')
                 active = 1 if request.form.get('active') else 0
                 values = (name, category, price, description, image_name, stock, active)
                 if p:
                     db().execute('UPDATE products SET name=?,category=?,price=?,description=?,image=?,stock=?,active=? WHERE id=?', values + (p['id'],))
+                    db().execute('UPDATE products SET presentation_stock=? WHERE id=?',(presentation_stock,p['id']))
                 else:
-                    db().execute('INSERT INTO products(name,category,price,description,image,stock,active) VALUES(?,?,?,?,?,?,?)', values)
+                    inserted=db().execute('INSERT INTO products(name,category,price,description,image,stock,active) VALUES(?,?,?,?,?,?,?)', values)
+                    db().execute('UPDATE products SET presentation_stock=? WHERE id=?',(presentation_stock,inserted.lastrowid))
                 db().commit()
                 flash('Product saved.', 'success')
                 return redirect(url_for('owner'))
@@ -514,7 +540,9 @@ def create_app(test_config=None):
             else:
                 if status == 'Cancelled' and current != 'Cancelled':
                     for item in items:
-                        connection.execute('UPDATE products SET stock=stock+? WHERE id=?', (item['quantity'], item['product_id']))
+                        stock_pool=connection.execute('SELECT stock_pool FROM order_extra WHERE order_id=?',(order_id,)).fetchone()['stock_pool']
+                        stock_column='presentation_stock' if stock_pool=='presentation' else 'stock'
+                        connection.execute(f'UPDATE products SET {stock_column}={stock_column}+? WHERE id=?', (item['quantity'], item['product_id']))
                 connection.execute('UPDATE orders SET status=? WHERE id=?', (status, order_id))
                 eco['order_changed'](connection,order_id,current)
                 connection.commit()
@@ -748,6 +776,8 @@ def create_app(test_config=None):
 
     def initialize():
         db().executescript(SCHEMA)
+        if 'presentation_stock' not in {row[1] for row in db().execute('PRAGMA table_info(products)')}:
+            db().execute('ALTER TABLE products ADD COLUMN presentation_stock INTEGER NOT NULL DEFAULT 50')
         if 'audio_source' not in {row[1] for row in db().execute('PRAGMA table_info(videos)')}:
             db().execute("ALTER TABLE videos ADD COLUMN audio_source TEXT NOT NULL DEFAULT ''")
         for key, slot in HOME_IMAGE_SLOTS.items():
