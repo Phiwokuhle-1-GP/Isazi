@@ -9,7 +9,7 @@
   },
   {
     "path": "APPLY_UPDATE.ps1",
-    "sha256": "eac77178b8a1c7b872d5afd46abfe53b4df3d8210af8ce61cf14f57414ef2b6a"
+    "sha256": "64f0716e710ed48debe2820fadb8e1f076be5e7fdd3979ebf0b01320075c25b3"
   },
   {
     "path": "CLIENT_DEMO_GUIDE.md",
@@ -37,7 +37,7 @@
   },
   {
     "path": "PUSH_GITHUB_WINDOWS.ps1",
-    "sha256": "4326b6966daa350a9a8ed41bc1b037f0772f99645de54955bef6c34a0d45297c"
+    "sha256": "59948bef84619c7bce1be4d33f0c45fbe14246bd8debbc8200e19c6227d26f5a"
   },
   {
     "path": "Procfile",
@@ -45,7 +45,7 @@
   },
   {
     "path": "README.md",
-    "sha256": "082f6b09f3770c900ac65886f4429b9a29d57ebc4ef8ec85c3a6795bc3c082bc"
+    "sha256": "c5e8f92550a4422c0dde078c37eb146a962b4dece62592f1aee1f346a3971422"
   },
   {
     "path": "RESET_OWNER_WINDOWS.ps1",
@@ -57,15 +57,15 @@
   },
   {
     "path": "START_WINDOWS.ps1",
-    "sha256": "6b2cb1cb7d72983d697cbdc988f0811ccdcc7ca33ba047d54fe78a7aebdf005d"
+    "sha256": "9c7ec79914fe5f6c69a1b800793969770689d6504c1d5e99d033a4f2517a6af5"
   },
   {
     "path": "VIDEO_UPLOADS.md",
-    "sha256": "ef247f5289bc113ef2ef1396e5b93238ca2c118051ce3b9fc6b4a72464f222b6"
+    "sha256": "144bdb17a50594ddc97116bbb60a3e4770f84d873af79f3f1d0adcb8799e8dbe"
   },
   {
     "path": "app.py",
-    "sha256": "ec6daff3b7a0f6f2b0be495ee143017242ea436db369e7bade7649e25db0eec3"
+    "sha256": "f53f954fb95f519cad2aec0f518e4f157efcede1847ddb588ec54c31f3dc08c9"
   },
   {
     "path": "asset_manifest.json",
@@ -729,7 +729,7 @@
   },
   {
     "path": "templates/base.html",
-    "sha256": "e88b8ffe855aaa02b68f3448bb5da270572ca0ff989fdd3822eb6acc58ab416d"
+    "sha256": "78f4e0a574b56746c9340becc96d5e1caa651234b7a9fad3a3dca203dcf8d5f5"
   },
   {
     "path": "templates/cart.html",
@@ -901,7 +901,7 @@
   },
   {
     "path": "tests/test_video_media.py",
-    "sha256": "1b8493e13f7e58d26d5b40b1af866dbdfc254f98d3691b32353906f37d6c2fe8"
+    "sha256": "6b81b53185f056d6ea971e4db6f1d39c6397cf8cf2de6400a8713ae3cc2f06ce"
   },
   {
     "path": "video_processing.py",
