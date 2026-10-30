@@ -121,3 +121,28 @@ document.querySelectorAll('form.media-edit').forEach(form => {
     }
   });
 });
+
+// Native touch rails; labelled buttons also work with keyboard and mouse.
+document.querySelectorAll('.scroll-home .featured-layout .product-grid, .scroll-home .bestsellers-and-values .product-grid, .scroll-home .testimonials-grid, .scroll-home .media-and-tips .article-grid').forEach((rail, index) => {
+  rail.id = rail.id || `collection-rail-${index}`;
+  const tools = document.createElement('div');
+  tools.className = 'carousel-tools';
+  const previous = document.createElement('button');
+  const next = document.createElement('button');
+  const label = document.createElement('span');
+  label.textContent = 'Swipe to explore';
+  previous.type = next.type = 'button';
+  previous.textContent = '←'; next.textContent = '→';
+  previous.setAttribute('aria-label', 'Previous items');
+  next.setAttribute('aria-label', 'Next items');
+  previous.setAttribute('aria-controls', rail.id); next.setAttribute('aria-controls', rail.id);
+  tools.append(previous, label, next); rail.after(tools);
+  const update = () => {
+    previous.disabled = rail.scrollLeft <= 2;
+    next.disabled = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+  };
+  const move = direction => rail.scrollBy({left: direction * (rail.firstElementChild?.getBoundingClientRect().width + 12 || rail.clientWidth), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+  previous.addEventListener('click', () => move(-1)); next.addEventListener('click', () => move(1));
+  rail.addEventListener('scroll', update, {passive:true}); window.addEventListener('resize', update);
+  update();
+});
