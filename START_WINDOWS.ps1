@@ -6,7 +6,7 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) { py -3 -m venv .venv }
 if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed." }
 & ".venv\Scripts\python.exe" optimize_assets.py
 if ($LASTEXITCODE -ne 0) { throw "Asset optimization failed." }
-Write-Host "Isazi Herbal Shop v2.6.17 - connected store, full shop, accounts and owner operations"
+Write-Host "Isazi Herbal Shop v2.6.23 - connected store, full shop, accounts and owner operations"
 Write-Host "Testimonials: http://127.0.0.1:5000/#testimonials"
 Write-Host "Version check: http://127.0.0.1:5000/health"
 Write-Host "Store: http://127.0.0.1:5000"

@@ -143,5 +143,5 @@ class ClientDemoTests(unittest.TestCase):
         self.assertIn(b'/payment-options/visa',response.data)
         checkout=self.client.get('/checkout')
         self.assertIn(b'value="Demo Customer"',checkout.data)
-        self.assertIn(b'Continue to Demo Payment',checkout.data)
+        self.assertIn(b'Confirm order',checkout.data)
         with self.client.session_transaction() as session:self.assertEqual(session['cart'],{'1':3})

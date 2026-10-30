@@ -1,0 +1,5 @@
+<div class="pep-picker" data-pep-fields>
+<label>Find your PEP branch<input type="search" data-branch-search placeholder="Type town, suburb, branch or code" autocomplete="off"></label>
+<label>PEP pickup branch<select name="branch_code" data-branch-select><option value="">Select your PEP branch</option>{% for branch in pep_branches %}<option value="{{ branch.code }}" {{ 'selected' if request.form.get('branch_code',phone_account.branch_code if phone_account else '')==branch.code }}>{{ branch.name }} ({{ branch.code }}) · {{ branch.town }} · {{ branch.province }}</option>{% endfor %}</select></label><p data-branch-description aria-live="polite"></p>
+<small>{{ pep_branches|length }} open PEP points from PAXI, updated {{ pep_directory_date }}. <a href="https://www.paxi.co.za/paxi-points" target="_blank" rel="noopener">Check the official locator</a>.</small>
+</div>

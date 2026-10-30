@@ -1,4 +1,53 @@
-# Isazi Herbal Shop — V2.6.17 Mobile & Desktop Storefront Refresh
+# V2.6.23 — Story video library
+
+Watch Our Stories opens /videos on desktop and mobile. Owner > Media supports selecting multiple MP4/WebM files, sent sequentially (250 MB each). Each is published only after desktop 720p and mobile 480p H.264/AAC conversions finish. Originals transfer privately to server scratch storage before compression; this is not browser-side compression before network upload. Source originals are removed after conversion. CRF 23 / fast encoding balances visual quality and size; compression is lossy and size reductions depend on the source. Native playback, fast-start MP4, and mobile rendition selection are retained. Direct HTTPS video links bypass transcoding.
+
+Titles default to filenames. Refresh owner Media to edit titles, covers or hide videos. Supplied Dr Ntuli portrait is the default library cover. Existing story and audio testimonials remain. A failed file does not block other files; on connection loss check the library before retrying. No background job resumes uploads after closing the page. The existing bounded conversion limit remains 4 minutes per rendition; long videos may need shorter clips. Not deployed.
+
+# V2.6.22 — Dr Ntuli video preview
+
+Uses the supplied portrait as the story video poster on the homepage and About page, including the video dialog. Existing videos and controls remain unchanged. Includes all previous updates.
+
+# V2.6.21 — Compact mobile footer
+
+Phone footer now uses a compact wordmark, contact row, expandable Explore and Customer care menus, social icons and copyright. Links retain 44px touch targets. Desktop footer unchanged. Includes all prior updates.
+
+# V2.6.21 — Header attribution
+
+Header branding now reads “by DR NTULI” on desktop and mobile. Includes the previous bundle quick-purchase and order notification updates.
+
+# V2.6.21 — Order notifications & QR codes for every product
+
+1. Place a PEP order: it stays Awaiting confirmation; a pending notification is saved.
+2. Owner verifies the full Capitec receipt and confirms payment: a payment-confirmed notification is saved. Duplicate confirmations do not duplicate payment records or messages.
+3. Owner records dispatch and the PAXI tracking reference: a dispatch notification is saved. Ready-for-collection updates generate a separate message. PAXI, not this app, provides the collection PIN when the parcel is available. Never send the customer's account PIN.
+4. Real order notifications send automatically after commit when SMS is configured and enabled. Unconfigured messages stay in the owner outbox; provider timeouts stay held for manual reconciliation. No automatic retry, background worker or delivery-receipt callback exists. SMS provider calls can add up to 15 seconds to the initiating request. If a process stops after commit but before sending, the message remains available for owner review/send. Test notifications are saved and visible, but never sent.
+5. Customers can read their notification history on their private order page, even without SMS delivery. The owner sees provider acceptance / queued / test status. Acceptance is not a handset-delivery guarantee.
+6. Only products marked Bundle deal have QR endpoints and quick-purchase links. The existing Herbal Combo Pack is enabled during migration; mark future bundles in the owner product editor. Mobile bundle cards show Buy Now, and tapping the bundle image/name starts quick checkout. QR codes are hidden on mobile and offered on desktop. Ordinary products retain Add to Cart and reject direct QR/quick-purchase requests. Owner > Bundle deal QR codes offers downloads for active bundles. Configure the public HTTPS shop URL first; QR destinations are never guessed from an untrusted request Host header.
+
+Validation: automated checkout, owner confirmation, no duplicate receipts/messages, SMS test isolation, provider failure handling, bundle-only QR coverage and owner access restrictions. Live bank transfers, live SMS and camera scanning against a deployed public URL still require rollout checks. This package is not deployed.
+
+# Isazi V2.6.21 — Cellphone, PEP pickup & product QR
+
+## New customer journey
+- New accounts use a normalized South African cellphone number and a salted/hashed 4-digit PIN. The immutable database customer ID is linked to the unique phone number; the displayed ID is ISZ-C followed by seven digits. Existing email/password accounts remain supported and are never silently merged.
+- Account-level lockout after five failed PIN attempts, even across IP addresses; ten failed attempts lock for a day. IP throttling is also enforced. Phone number changes/PIN recovery require staff-assisted identity checks; no automatic SMS ownership verification or self-service recovery is implemented in this release. Never reset an account based only on a caller knowing a number.
+- Choose PEP pickup + Capitec transfer or other delivery/collection + the existing gateway journey. Recipient name is collected at checkout, email is not required for phone accounts.
+- PEP branches: 2,487 open South African PEP-family locations from https://map.paxi.co.za/points.json, fetched 30 October 2026. This is a dated directory snapshot, not a live booking integration. Closed, planned and hold locations were excluded. Confirm the destination with the official PAXI locator at dispatch.
+- Delivery is free strictly OVER R600, after discounts. Set the fee for R600 or less under Owner > Cellphone checkout. Smaller PEP orders are blocked until that fee is configured.
+- Set the shop's verified Capitec holder, number, type and branch code in the same screen. Banking details are frozen on new orders. Existing orders created without banking settings need staff to supply verified instructions.
+- Orders stay awaiting payment. Owner must explicitly confirm the full bank receipt with a bank transaction reference before dispatch. A cellphone reference identifies the customer, not a unique transfer: reconcile each order/amount separately when a customer has multiple pending orders. Confirming twice never adds a duplicate receipt. PEP orders cannot use demo or PayFast payment endpoints.
+- Dispatch requires a PAXI tracking reference. A durable SMS outbox appears on the order. Pending, payment-confirmed, dispatch and ready-for-collection messages are saved durably with each order event. For live orders, configured/enabled SMS sends automatically after the transaction commits. Without SMS configuration they remain Queued and can be sent by the owner. No automatic booking or bulk send. Twilio is supported: configure the Account SID, Auth Token and registered sender privately in the owner settings. Token is never rendered back or put in public context. Provider acceptance is recorded, not claimed as handset delivery. An uncertain timeout is held for manual provider reconciliation, with no blind retries.
+- PAXI sends its own collection OTP on arrival; it is not the Isazi login PIN. Isazi dispatch messages do not manufacture collection PINs.
+- Payment-test orders stay simulated, never show bank transfer instructions and never send real SMS. Normal/live mode uses the store stock pool and real finance records. Changing modes does not convert earlier orders.
+
+## Product QR quick purchase
+Set the public HTTPS homepage address in Owner > Cellphone checkout, or PUBLIC_BASE_URL. Each bundle page shows a downloadable black-on-white QR PNG on desktop and Buy Now on mobile. Bundle QR contains only the public /buy/<product_id> link, no account/payment credentials. It opens one-unit checkout for that product (bundles use their own product ID). New users register first and retain that product. Existing basket items are preserved separately. Prices, stock and totals are revalidated at order placement. QR must be tested on a phone against the actual public URL before printing.
+
+## Update / deployment status
+This release was prepared and tested locally. It has NOT been pushed or deployed. Use the included updater on the installed Windows application; data/accounts/orders/uploads are preserved. Configure bank, fee, shop URL and SMS before a real rollout. Existing payment providers remain in the previously configured test/live mode.
+
+# Isazi Herbal Shop — V2.6.21 Mobile & Desktop Storefront Refresh
 
 The approved design refresh uses locally hosted Manrope fonts, rounded cards, yellow primary actions, original branding and swipeable mobile product/testimonial/article rails. Desktop keeps the existing section order and columns. The customer login, cart, checkout, payment and account pages share the new theme. The desktop featured row shows five products; all six remain in the mobile carousel and shop. Actual media, product details, stock and account/payment logic remain authoritative. No deployment is performed by this update.
 
@@ -19,17 +68,17 @@ New video uploads are converted before publishing to desktop 720p and mobile 480
 
 ## Update an existing Windows installation
 
-Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_17_Storefront_Refresh.zip into Downloads:
+Stop Flask with Ctrl+C. Download Isazi_Herbal_Shop_V2_6_21_Compact_Mobile_Footer.zip into Downloads:
 
 ```powershell
 cd "$HOME\Downloads"
-Expand-Archive ".\Isazi_Herbal_Shop_V2_6_17_Storefront_Refresh.zip" -DestinationPath ".\Isazi_Update_2617" -Force
-powershell -ExecutionPolicy Bypass -File ".\Isazi_Update_2617\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
+Expand-Archive ".\Isazi_Herbal_Shop_V2_6_21_Compact_Mobile_Footer.zip" -DestinationPath ".\Isazi_Update_2621" -Force
+powershell -ExecutionPolicy Bypass -File ".\Isazi_Update_2621\Isazi_Herbal_Shop_V2\APPLY_UPDATE.ps1"
 if ($LASTEXITCODE -ne 0) { throw "Update failed." }
 powershell -ExecutionPolicy Bypass -File ".\Isazi_Flask_Store\Isazi_Herbal_Shop_V2\START_WINDOWS.ps1"
 ```
 
-The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.17, demo_mode false and demo_payments_enabled true.
+The updater defaults to Downloads/Isazi_Flask_Store/Isazi_Herbal_Shop_V2. Use -TargetPath for another installed app folder. It backs up code and preserves runtime data. It never copies a packaged database or owner password. Press Ctrl+F5. /health must show version 2.6.21, demo_mode false and demo_payments_enabled true.
 
 ## Owner and customer walkthrough
 
@@ -59,7 +108,7 @@ To disable simulated payments, stop the process and use START_WINDOWS.ps1 -LiveP
 
 All 74 automated checks pass. The suite uses temporary databases to verify shopping, access roles, uploads, simulated and verified payment handling, inventory, persistence, cancellations, reporting and existing records. Browser checks use Flask-rendered HTML; backend checks use Flask's test client. Windows PowerShell and live Render/provider connectivity must be verified on those systems. Source archives exclude databases, uploads and owner passwords.
 
-## Mobile and faster loading in V2.6.17
+## Mobile and faster loading in V2.6.21
 
 The phone layout has a collapsible accessible navigation menu, prominent search/cart/account controls, a compact swipeable category strip, a readable hero with its original photos, larger primary touch controls, phone-friendly forms and responsive order cards. Mobile quantity, gallery and menu interactions were checked in the browser. Customer and owner workflows remain the unified V2.6.5 journey.
 
@@ -68,3 +117,6 @@ Responsive WebP variants reduce delivery sizes while preserving original assets.
 Static fingerprinted assets can be cached for a year, including in payment test mode. Personalized HTML/CSRF pages remain private and uncached. Text responses negotiate gzip. The original five stylesheets plus phone refinements are served in one versioned bundle. The asset build runs automatically at Windows startup and Render build/start, skipping work when inputs are unchanged.
 
 See PERFORMANCE_NOTES.md for file-size measurements and validation limits. This update has not been deployed by creating the package; push it with the included Git script and verify the Render deployment.
+
+## Video preview cleanup
+The story player now loads video metadata without the uploaded poster, removing the large play mark from that poster. The decorative story placeholder play overlay is also removed. Native playback controls remain. Marks baked into video frames cannot be removed by this template change; those require the clean source video.

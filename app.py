@@ -17,11 +17,12 @@ from flask import Flask, abort, flash, g, redirect, render_template, request, se
 from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image, UnidentifiedImageError
 from ecosystem import register_ecosystem, valid_email
+from simple_checkout import register_simple
 from client_demo import register_client_demo
 from video_processing import transcode_upload
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.17'
+APP_VERSION = '2.6.23'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -198,7 +199,7 @@ def create_app(test_config=None):
 
     @app.before_request
     def purchasing_role():
-        purchase_endpoints={'cart_add','cart_update','cart_remove','checkout','demo.complete','eco.pay'}
+        purchase_endpoints={'cart_add','cart_update','cart_remove','checkout','quick_buy','demo.complete','eco.pay'}
         if session.get('admin') and request.endpoint in purchase_endpoints:
             abort(403,'Owners cannot purchase. Sign out and use a customer account, or open a separate browser profile.')
         if request.endpoint in {'cart_add','checkout'} and app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not app.config.get('DEMO_MODE') and not eco['current_customer']():
@@ -260,6 +261,7 @@ def create_app(test_config=None):
 
     @app.post('/cart/add/<int:product_id>')
     def cart_add(product_id):
+        session.pop('quick_product',None)
         p = get_product(product_id)
         qty = bounded_int(request.form.get('quantity', '1'))
         cart = dict(session.get('cart', {}))
@@ -283,6 +285,7 @@ def create_app(test_config=None):
 
     @app.route('/cart')
     def cart():
+        session.pop('quick_product',None)
         lines = cart_lines()
         subtotal=sum(x['total'] for x in lines)
         return render_template('cart.html', lines=lines, subtotal=subtotal, title='Your cart',**eco['cart_promotion'](subtotal))
@@ -302,9 +305,31 @@ def create_app(test_config=None):
         session['cart'] = cart
         return redirect(url_for('cart'))
 
+    @app.get('/buy/<int:product_id>')
+    def quick_buy(product_id):
+        p=get_product(product_id)
+        if not p['is_bundle']: abort(404)
+        if p['stock']<1:
+            flash('This product is currently unavailable. Please choose another product.','error')
+            return redirect(url_for('product',product_id=product_id))
+        session['quick_product']=product_id
+        session.pop('checkout_key',None)
+        if not eco['current_customer']():
+            session['after_auth_quick']=product_id
+            return redirect(url_for('eco.customer_register'))
+        return redirect(url_for('checkout'))
+
     @app.route('/checkout', methods=['GET', 'POST'])
     def checkout():
-        lines = cart_lines()
+        quick_product=session.get('quick_product')
+        if quick_product:
+            quick=get_product(quick_product)
+            if not quick['is_bundle']:
+                session.pop('quick_product',None)
+                return redirect(url_for('product',product_id=quick_product))
+            lines=[dict(product=quick,quantity=1,total=quick['price'])]
+        else:
+            lines = cart_lines()
         if not lines:
             flash('Add a product before checking out.', 'error')
             return redirect(url_for('shop'))
@@ -321,6 +346,11 @@ def create_app(test_config=None):
                 return redirect(url_for('confirmation', token=previous['token']))
             fields = {k: request.form.get(k, '').strip() for k in ['name', 'email', 'phone', 'fulfillment', 'address', 'notes']}
             errors = []
+            pep_branch = None
+            try:
+                pep_branch = simple['validate_checkout'](fields,subtotal)
+            except ValueError as error:
+                errors.append(str(error))
             code=request.form.get('agent_code',eco['current_referral']()).strip()
             if code and not eco['resolve_agent'](code):
                 errors.append('Enter a valid approved agent code or leave it blank.')
@@ -330,8 +360,8 @@ def create_app(test_config=None):
                 errors.append('Enter a valid email address.')
             if not re.fullmatch(r'[+\d ()-]{7,25}', fields['phone']):
                 errors.append('Enter a valid contact number.')
-            if fields['fulfillment'] not in ['collection', 'randburg']:
-                errors.append('Choose collection or Randburg delivery.')
+            if fields['fulfillment'] not in ['collection', 'randburg', 'pep']:
+                errors.append('Choose PEP pickup, collection or delivery.')
             if fields['fulfillment'] == 'randburg' and not 10 <= len(fields['address']) <= 600:
                 errors.append('Enter a full Randburg delivery address.')
             if len(fields['notes']) > 1000 or len(fields['address']) > 600:
@@ -359,7 +389,7 @@ def create_app(test_config=None):
                         subtotal += line['total']
                     applied_coupon=eco['coupon_for_checkout'](connection,subtotal)
                     discount=applied_coupon['discount']
-                    shipping = 0 if fields['fulfillment'] == 'collection' or subtotal-discount > 60000 else 5000
+                    shipping = simple['shipping'](subtotal-discount) if fields['fulfillment']=='pep' else (0 if fields['fulfillment'] == 'collection' or subtotal-discount > 60000 else 5000)
                     token = secrets.token_urlsafe(32)
                     order_id = connection.execute('INSERT INTO orders(token,checkout_key,name,email,phone,fulfillment,address,notes,subtotal,shipping,total) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                         (token, key, fields['name'], fields['email'], fields['phone'], fields['fulfillment'], fields['address'], fields['notes'], subtotal, shipping, subtotal-discount + shipping)).lastrowid
@@ -367,12 +397,15 @@ def create_app(test_config=None):
                         p = line['product']
                         connection.execute('INSERT INTO order_items(order_id,product_id,name,quantity,unit_price) VALUES(?,?,?,?,?)', (order_id, p['id'], p['name'], line['quantity'], p['price']))
                     eco['capture_order'](connection,order_id,request.form,applied_coupon)
+                    simple['capture'](connection,order_id,pep_branch)
                     connection.commit()
-                    session['cart'] = {}
+                    if not quick_product:
+                        session['cart'] = {}
+                    session.pop('quick_product',None)
                     session.pop('coupon',None)
                     session.pop('checkout_key', None)
                     session['recent_order'] = token
-                    return redirect(url_for('demo.payment_select',token=token) if app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED') else url_for('confirmation', token=token))
+                    return redirect(url_for('demo.payment_select',token=token) if fields['fulfillment']!='pep' and (app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED')) else url_for('confirmation', token=token))
                 except ValueError as error:
                     connection.rollback()
                     flash(str(error), 'error')
@@ -521,6 +554,7 @@ def create_app(test_config=None):
                 else:
                     inserted=db().execute('INSERT INTO products(name,category,price,description,image,stock,active) VALUES(?,?,?,?,?,?,?)', values)
                     db().execute('UPDATE products SET presentation_stock=? WHERE id=?',(presentation_stock,inserted.lastrowid))
+                db().execute('UPDATE products SET is_bundle=? WHERE id=?',(1 if request.form.get('is_bundle') else 0,p['id'] if p else inserted.lastrowid))
                 db().commit()
                 flash('Product saved.', 'success')
                 return redirect(url_for('owner'))
@@ -540,6 +574,10 @@ def create_app(test_config=None):
             status = request.form.get('status')
             if status not in ['Awaiting confirmation', 'Paid', 'Ready', 'Completed', 'Cancelled']:
                 abort(400)
+            pep = connection.execute('SELECT * FROM pep_orders WHERE order_id=?',(order_id,)).fetchone()
+            if pep and status in ('Paid','Ready','Completed') and not pep['confirmed_at']:
+                flash('Use Confirm Capitec payment before preparing or completing a PEP order.','error')
+                return redirect(url_for('owner_order',order_id=order_id))
             connection.execute('BEGIN IMMEDIATE')
             current = connection.execute('SELECT status FROM orders WHERE id=?', (order_id,)).fetchone()['status']
             if current == 'Cancelled' and status != 'Cancelled':
@@ -607,6 +645,51 @@ def create_app(test_config=None):
                 target.unlink(missing_ok=True)
             flash(str(error) if isinstance(error, ValueError) else 'Upload a valid JPG, PNG or WebP image.', 'error')
         return redirect(url_for('owner_home_images'))
+
+    @app.get('/videos')
+    def story_library():
+        videos = [dict(v) for v in db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id DESC").fetchall()]
+        # Preserve the legacy settings-only story source.
+        for video in videos:
+            if not video['video_source'] and video['id'] == 1:
+                video['video_source'] = settings().get('story_video', '')
+        return render_template('story_library.html', videos=[v for v in videos if v['video_source']], title='Our video library')
+
+    @app.post('/owner/media/stories')
+    @admin_only
+    def owner_story_upload():
+        created = []
+        try:
+            upload = request.files.get('video')
+            if not upload or not upload.filename:
+                raise ValueError('Choose an MP4 or WebM video.')
+            upload.stream.seek(0, os.SEEK_END)
+            size = upload.stream.tell()
+            upload.stream.seek(0)
+            header = upload.stream.read(32)
+            upload.stream.seek(0)
+            ext = Path(upload.filename).suffix.lower()
+            if not 12 <= size <= 250 * 1024 * 1024:
+                raise ValueError('Each video must be under 250 MB.')
+            if not ((ext == '.mp4' and header[4:8] == b'ftyp') or (ext == '.webm' and header[:4] == b'\x1aE\xdf\xa3')):
+                raise ValueError('Choose a valid MP4 or WebM video.')
+            title = Path(upload.filename.replace('\\', '/')).stem.replace('_', ' ').strip()[:100] or 'Our story'
+            source, mobile = transcode_upload(upload, app.config['UPLOAD_DIR'])
+            created = [Path(app.config['UPLOAD_DIR']) / n for n in (source, mobile)]
+            row = db().execute("INSERT INTO videos(kind,title,poster,video_source,mobile_video_source,active) VALUES('story',?,?,?,?,1)",
+                               (title, 'story-dr-ntuli-poster-v2622.png', source, mobile))
+            db().commit()
+            return {'id': row.lastrowid, 'title': title, 'status': 'published'}, 201
+        except (ValueError, OSError) as error:
+            db().rollback()
+            for path in created:
+                path.unlink(missing_ok=True)
+            return {'error': str(error)}, 400
+        except Exception:
+            db().rollback()
+            for path in created:
+                path.unlink(missing_ok=True)
+            raise
 
     @app.route('/owner/media')
     @admin_only
@@ -813,10 +896,12 @@ def create_app(test_config=None):
         db().commit()
 
     eco=register_ecosystem(app,db,admin_only)
+    simple=register_simple(app,db,admin_only,eco)
     demo=register_client_demo(app,db,eco)
     with app.app_context():
         initialize()
         eco['initialize']()
+        simple['initialize']()
         demo['initialize']()
     return app
 

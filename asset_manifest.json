@@ -1,555 +1,567 @@
 {
-  "css": "optimized/store-1a71cad6829c5c04.css",
-  "fingerprint": "a8d0c191a91f72d8bb3c4d2b1dd8bdfddf0e6df46a241b40dda174ca88633724",
+  "css": "optimized/store-040a467aadafefa6.css",
+  "fingerprint": "a66c59cc8f19571b549a2416a906e9f0bf6686036041730575d908c936eb9480",
   "images": {
     "article-1.webp": [
       {
         "height": 54,
-        "path": "optimized/article-1.webp/106-df4950fdfe770650.webp",
+        "path": "optimized/article-1.webp/106-015a307ebe7aa088.webp",
         "width": 106
       }
     ],
     "article-2.webp": [
       {
         "height": 54,
-        "path": "optimized/article-2.webp/106-bb0d2165a0c76aec.webp",
+        "path": "optimized/article-2.webp/106-811ace15b5131812.webp",
         "width": 106
       }
     ],
     "article-3.webp": [
       {
         "height": 54,
-        "path": "optimized/article-3.webp/105-2bec36fb0e59461a.webp",
+        "path": "optimized/article-3.webp/105-8566269590cc8511.webp",
         "width": 105
       }
     ],
     "article-4.webp": [
       {
         "height": 54,
-        "path": "optimized/article-4.webp/106-fb3dc780f0cce1db.webp",
+        "path": "optimized/article-4.webp/106-adcc5d98616bd1ef.webp",
         "width": 106
       }
     ],
     "combo.webp": [
       {
         "height": 129,
-        "path": "optimized/combo.webp/194-f85bc42a119ab235.webp",
+        "path": "optimized/combo.webp/194-7e387c6db6442e90.webp",
         "width": 194
       }
     ],
     "demo-article-2.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-article-2.webp/320-4ac86716f5e254ce.webp",
+        "path": "optimized/demo-article-2.webp/320-8d6ba24e62b552e4.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-article-2.webp/640-4ac86716f5e254ce.webp",
+        "path": "optimized/demo-article-2.webp/640-8d6ba24e62b552e4.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-article-2.webp/1280-4ac86716f5e254ce.webp",
+        "path": "optimized/demo-article-2.webp/1280-8d6ba24e62b552e4.webp",
         "width": 1280
       }
     ],
     "demo-article-3.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-article-3.webp/320-bfbf4dfb77e6eb99.webp",
+        "path": "optimized/demo-article-3.webp/320-0c721ae683afeb05.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-article-3.webp/640-bfbf4dfb77e6eb99.webp",
+        "path": "optimized/demo-article-3.webp/640-0c721ae683afeb05.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-article-3.webp/1280-bfbf4dfb77e6eb99.webp",
+        "path": "optimized/demo-article-3.webp/1280-0c721ae683afeb05.webp",
         "width": 1280
       }
     ],
     "demo-article-4.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-article-4.webp/320-ed7db813294304ea.webp",
+        "path": "optimized/demo-article-4.webp/320-081a6d1b2b1fcfeb.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-article-4.webp/640-ed7db813294304ea.webp",
+        "path": "optimized/demo-article-4.webp/640-081a6d1b2b1fcfeb.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-article-4.webp/1280-ed7db813294304ea.webp",
+        "path": "optimized/demo-article-4.webp/1280-081a6d1b2b1fcfeb.webp",
         "width": 1280
       }
     ],
     "demo-botanicals.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-botanicals.webp/320-444233e354966240.webp",
+        "path": "optimized/demo-botanicals.webp/320-8ff42aae147b82f7.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-botanicals.webp/640-444233e354966240.webp",
+        "path": "optimized/demo-botanicals.webp/640-8ff42aae147b82f7.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-botanicals.webp/1280-444233e354966240.webp",
+        "path": "optimized/demo-botanicals.webp/1280-8ff42aae147b82f7.webp",
         "width": 1280
       }
     ],
     "demo-combo.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-combo.webp/320-cf96575a92ef1e9f.webp",
+        "path": "optimized/demo-combo.webp/320-f23da63120bb8c6c.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-combo.webp/640-cf96575a92ef1e9f.webp",
+        "path": "optimized/demo-combo.webp/640-f23da63120bb8c6c.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-combo.webp/1280-cf96575a92ef1e9f.webp",
+        "path": "optimized/demo-combo.webp/1280-f23da63120bb8c6c.webp",
         "width": 1280
       }
     ],
     "demo-hero.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-hero.webp/640-da5cb7e003748987.webp",
+        "path": "optimized/demo-hero.webp/640-8881e55db967508d.webp",
         "width": 640
       },
       {
         "height": 427,
-        "path": "optimized/demo-hero.webp/1280-da5cb7e003748987.webp",
+        "path": "optimized/demo-hero.webp/1280-8881e55db967508d.webp",
         "width": 1280
       },
       {
         "height": 724,
-        "path": "optimized/demo-hero.webp/2172-da5cb7e003748987.webp",
+        "path": "optimized/demo-hero.webp/2172-8881e55db967508d.webp",
         "width": 2172
       }
     ],
     "demo-product-1.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-product-1.webp/320-3bfc9302756532ed.webp",
+        "path": "optimized/demo-product-1.webp/320-41afa2523ed8baf9.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-product-1.webp/640-3bfc9302756532ed.webp",
+        "path": "optimized/demo-product-1.webp/640-41afa2523ed8baf9.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-product-1.webp/1280-3bfc9302756532ed.webp",
+        "path": "optimized/demo-product-1.webp/1280-41afa2523ed8baf9.webp",
         "width": 1280
       }
     ],
     "demo-product-2.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-product-2.webp/320-0fa0ad1d8822d92c.webp",
+        "path": "optimized/demo-product-2.webp/320-c08ff5e660e6b411.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-product-2.webp/640-0fa0ad1d8822d92c.webp",
+        "path": "optimized/demo-product-2.webp/640-c08ff5e660e6b411.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-product-2.webp/1280-0fa0ad1d8822d92c.webp",
+        "path": "optimized/demo-product-2.webp/1280-c08ff5e660e6b411.webp",
         "width": 1280
       }
     ],
     "demo-product-3.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-product-3.webp/320-2df745182879b76e.webp",
+        "path": "optimized/demo-product-3.webp/320-90408b9a146d0136.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-product-3.webp/640-2df745182879b76e.webp",
+        "path": "optimized/demo-product-3.webp/640-90408b9a146d0136.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-product-3.webp/1280-2df745182879b76e.webp",
+        "path": "optimized/demo-product-3.webp/1280-90408b9a146d0136.webp",
         "width": 1280
       }
     ],
     "demo-product-4.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-product-4.webp/320-a8be345d1dae4d23.webp",
+        "path": "optimized/demo-product-4.webp/320-2c472f3aa95de17d.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-product-4.webp/640-a8be345d1dae4d23.webp",
+        "path": "optimized/demo-product-4.webp/640-2c472f3aa95de17d.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-product-4.webp/1280-a8be345d1dae4d23.webp",
+        "path": "optimized/demo-product-4.webp/1280-2c472f3aa95de17d.webp",
         "width": 1280
       }
     ],
     "demo-product-5.webp": [
       {
         "height": 213,
-        "path": "optimized/demo-product-5.webp/320-5c64f8f7d8264068.webp",
+        "path": "optimized/demo-product-5.webp/320-909dac51d9538e75.webp",
         "width": 320
       },
       {
         "height": 427,
-        "path": "optimized/demo-product-5.webp/640-5c64f8f7d8264068.webp",
+        "path": "optimized/demo-product-5.webp/640-909dac51d9538e75.webp",
         "width": 640
       },
       {
         "height": 853,
-        "path": "optimized/demo-product-5.webp/1280-5c64f8f7d8264068.webp",
+        "path": "optimized/demo-product-5.webp/1280-909dac51d9538e75.webp",
         "width": 1280
       }
     ],
     "demo-story.webp": [
       {
         "height": 180,
-        "path": "optimized/demo-story.webp/320-5657eddda81b1d6b.webp",
+        "path": "optimized/demo-story.webp/320-b81bce4a2697da47.webp",
         "width": 320
       },
       {
         "height": 360,
-        "path": "optimized/demo-story.webp/640-5657eddda81b1d6b.webp",
+        "path": "optimized/demo-story.webp/640-b81bce4a2697da47.webp",
         "width": 640
       },
       {
         "height": 720,
-        "path": "optimized/demo-story.webp/1280-5657eddda81b1d6b.webp",
+        "path": "optimized/demo-story.webp/1280-b81bce4a2697da47.webp",
         "width": 1280
       }
     ],
     "demo-testimonial-1.webp": [
       {
         "height": 240,
-        "path": "optimized/demo-testimonial-1.webp/320-f40ffd13ef17c6d2.webp",
+        "path": "optimized/demo-testimonial-1.webp/320-aa65fa354b374973.webp",
         "width": 320
       },
       {
         "height": 480,
-        "path": "optimized/demo-testimonial-1.webp/640-f40ffd13ef17c6d2.webp",
+        "path": "optimized/demo-testimonial-1.webp/640-aa65fa354b374973.webp",
         "width": 640
       },
       {
         "height": 960,
-        "path": "optimized/demo-testimonial-1.webp/1280-f40ffd13ef17c6d2.webp",
+        "path": "optimized/demo-testimonial-1.webp/1280-aa65fa354b374973.webp",
         "width": 1280
       }
     ],
     "demo-testimonial-2.webp": [
       {
         "height": 240,
-        "path": "optimized/demo-testimonial-2.webp/320-ac8cc5a9783d0151.webp",
+        "path": "optimized/demo-testimonial-2.webp/320-adbd115aa0adc3e8.webp",
         "width": 320
       },
       {
         "height": 480,
-        "path": "optimized/demo-testimonial-2.webp/640-ac8cc5a9783d0151.webp",
+        "path": "optimized/demo-testimonial-2.webp/640-adbd115aa0adc3e8.webp",
         "width": 640
       },
       {
         "height": 960,
-        "path": "optimized/demo-testimonial-2.webp/1280-ac8cc5a9783d0151.webp",
+        "path": "optimized/demo-testimonial-2.webp/1280-adbd115aa0adc3e8.webp",
         "width": 1280
       }
     ],
     "demo-testimonial-3.webp": [
       {
         "height": 240,
-        "path": "optimized/demo-testimonial-3.webp/320-9a2e244a2db78c8b.webp",
+        "path": "optimized/demo-testimonial-3.webp/320-46f2ba05cbfd10cf.webp",
         "width": 320
       },
       {
         "height": 480,
-        "path": "optimized/demo-testimonial-3.webp/640-9a2e244a2db78c8b.webp",
+        "path": "optimized/demo-testimonial-3.webp/640-46f2ba05cbfd10cf.webp",
         "width": 640
       },
       {
         "height": 960,
-        "path": "optimized/demo-testimonial-3.webp/1280-9a2e244a2db78c8b.webp",
+        "path": "optimized/demo-testimonial-3.webp/1280-46f2ba05cbfd10cf.webp",
         "width": 1280
       }
     ],
     "demo-testimonial-4.webp": [
       {
         "height": 240,
-        "path": "optimized/demo-testimonial-4.webp/320-38df5b0195e6d486.webp",
+        "path": "optimized/demo-testimonial-4.webp/320-5912c80a14949f92.webp",
         "width": 320
       },
       {
         "height": 480,
-        "path": "optimized/demo-testimonial-4.webp/640-38df5b0195e6d486.webp",
+        "path": "optimized/demo-testimonial-4.webp/640-5912c80a14949f92.webp",
         "width": 640
       },
       {
         "height": 960,
-        "path": "optimized/demo-testimonial-4.webp/1280-38df5b0195e6d486.webp",
+        "path": "optimized/demo-testimonial-4.webp/1280-5912c80a14949f92.webp",
         "width": 1280
       }
     ],
     "dr-ntuli-hero-enhanced.png": [
       {
         "height": 1024,
-        "path": "optimized/dr-ntuli-hero-enhanced.png/1536-9772ecc8e0339ba3.webp",
+        "path": "optimized/dr-ntuli-hero-enhanced.png/1536-dac68834923d5bc8.webp",
         "width": 1536
       }
     ],
     "dr-ntuli-left-original-v2.png": [
       {
         "height": 656,
-        "path": "optimized/dr-ntuli-left-original-v2.png/519-820a72f032a6beca.webp",
+        "path": "optimized/dr-ntuli-left-original-v2.png/519-8fa6229a60cfc9b5.webp",
         "width": 519
       }
     ],
     "dr-ntuli-left-original.png": [
       {
         "height": 329,
-        "path": "optimized/dr-ntuli-left-original.png/348-89b7027994210ac8.webp",
+        "path": "optimized/dr-ntuli-left-original.png/348-d9760358bccb7d6e.webp",
         "width": 348
       }
     ],
     "dr-ntuli-original.png": [
       {
         "height": 392,
-        "path": "optimized/dr-ntuli-original.png/415-5332359f5ec56967.webp",
+        "path": "optimized/dr-ntuli-original.png/415-6f85d4cb8b26cfdb.webp",
         "width": 415
       }
     ],
     "founder.webp": [
       {
         "height": 164,
-        "path": "optimized/founder.webp/320-05a7879bfc54e596.webp",
+        "path": "optimized/founder.webp/320-925a2ac9ed53285a.webp",
         "width": 320
       },
       {
         "height": 191,
-        "path": "optimized/founder.webp/372-05a7879bfc54e596.webp",
+        "path": "optimized/founder.webp/372-925a2ac9ed53285a.webp",
         "width": 372
       }
     ],
     "hero-landscape-composite.webp": [
       {
         "height": 213,
-        "path": "optimized/hero-landscape-composite.webp/640-0b020aae521f24bc.webp",
+        "path": "optimized/hero-landscape-composite.webp/640-db24fdfa8ca35ac1.webp",
         "width": 640
       },
       {
         "height": 427,
-        "path": "optimized/hero-landscape-composite.webp/1280-0b020aae521f24bc.webp",
+        "path": "optimized/hero-landscape-composite.webp/1280-db24fdfa8ca35ac1.webp",
         "width": 1280
       },
       {
         "height": 724,
-        "path": "optimized/hero-landscape-composite.webp/2172-0b020aae521f24bc.webp",
+        "path": "optimized/hero-landscape-composite.webp/2172-db24fdfa8ca35ac1.webp",
         "width": 2172
       }
     ],
     "hero-natural-meadow.webp": [
       {
         "height": 213,
-        "path": "optimized/hero-natural-meadow.webp/640-de7d825de35590cc.webp",
+        "path": "optimized/hero-natural-meadow.webp/640-0f966c7e30b8d4b3.webp",
         "width": 640
       },
       {
         "height": 427,
-        "path": "optimized/hero-natural-meadow.webp/1280-de7d825de35590cc.webp",
+        "path": "optimized/hero-natural-meadow.webp/1280-0f966c7e30b8d4b3.webp",
         "width": 1280
       },
       {
         "height": 724,
-        "path": "optimized/hero-natural-meadow.webp/2172-de7d825de35590cc.webp",
+        "path": "optimized/hero-natural-meadow.webp/2172-0f966c7e30b8d4b3.webp",
         "width": 2172
       }
     ],
     "hero-scroll.webp": [
       {
         "height": 160,
-        "path": "optimized/hero-scroll.webp/640-c39b0df1a6c208f6.webp",
+        "path": "optimized/hero-scroll.webp/640-00b4a3e5da7437fc.webp",
         "width": 640
       },
       {
         "height": 180,
-        "path": "optimized/hero-scroll.webp/719-c39b0df1a6c208f6.webp",
+        "path": "optimized/hero-scroll.webp/719-00b4a3e5da7437fc.webp",
         "width": 719
       }
     ],
     "hero.webp": [
       {
         "height": 159,
-        "path": "optimized/hero.webp/640-5bee49f4ef4f15ab.webp",
+        "path": "optimized/hero.webp/640-0b5d360c49e980eb.webp",
         "width": 640
       },
       {
         "height": 255,
-        "path": "optimized/hero.webp/1024-5bee49f4ef4f15ab.webp",
+        "path": "optimized/hero.webp/1024-0b5d360c49e980eb.webp",
         "width": 1024
       }
     ],
     "logo.webp": [
       {
         "height": 52,
-        "path": "optimized/logo.webp/204-816d38d1c5a2ba23.webp",
+        "path": "optimized/logo.webp/204-26d12d7b1ec2e898.webp",
         "width": 204
       }
     ],
     "product-1.webp": [
       {
         "height": 77,
-        "path": "optimized/product-1.webp/114-a8613cb9cac0ea67.webp",
+        "path": "optimized/product-1.webp/114-1ccc2884f75773c8.webp",
         "width": 114
       }
     ],
     "product-2.webp": [
       {
         "height": 77,
-        "path": "optimized/product-2.webp/115-ded1a417054ce98a.webp",
+        "path": "optimized/product-2.webp/115-ca5c5594ee2b5269.webp",
         "width": 115
       }
     ],
     "product-3.webp": [
       {
         "height": 77,
-        "path": "optimized/product-3.webp/113-7833a9335728784f.webp",
+        "path": "optimized/product-3.webp/113-25e9ea1563546fd7.webp",
         "width": 113
       }
     ],
     "product-4.webp": [
       {
         "height": 77,
-        "path": "optimized/product-4.webp/113-4a7afc634b4107ef.webp",
+        "path": "optimized/product-4.webp/113-773c4fbce292a4b4.webp",
         "width": 113
       }
     ],
     "product-5.webp": [
       {
         "height": 77,
-        "path": "optimized/product-5.webp/108-d3ad79150cc05641.webp",
+        "path": "optimized/product-5.webp/108-d76e51f80007064e.webp",
         "width": 108
       }
     ],
     "promo-cleanse.webp": [
       {
         "height": 91,
-        "path": "optimized/promo-cleanse.webp/320-0804af345e770c22.webp",
+        "path": "optimized/promo-cleanse.webp/320-a1909b3a64840627.webp",
         "width": 320
       },
       {
         "height": 97,
-        "path": "optimized/promo-cleanse.webp/340-0804af345e770c22.webp",
+        "path": "optimized/promo-cleanse.webp/340-a1909b3a64840627.webp",
         "width": 340
       }
     ],
     "promo-immune.webp": [
       {
         "height": 92,
-        "path": "optimized/promo-immune.webp/320-7fef5a961199d173.webp",
+        "path": "optimized/promo-immune.webp/320-f6d4bc29c988321d.webp",
         "width": 320
       },
       {
         "height": 97,
-        "path": "optimized/promo-immune.webp/339-7fef5a961199d173.webp",
+        "path": "optimized/promo-immune.webp/339-f6d4bc29c988321d.webp",
         "width": 339
+      }
+    ],
+    "story-dr-ntuli-poster-v2622.png": [
+      {
+        "height": 315,
+        "path": "optimized/story-dr-ntuli-poster-v2622.png/320-b5de52af65cc7257.webp",
+        "width": 320
+      },
+      {
+        "height": 460,
+        "path": "optimized/story-dr-ntuli-poster-v2622.png/467-b5de52af65cc7257.webp",
+        "width": 467
       }
     ],
     "story-scroll.webp": [
       {
         "height": 134,
-        "path": "optimized/story-scroll.webp/265-8d7d36b70d7ca6a2.webp",
+        "path": "optimized/story-scroll.webp/265-bfe3a3b32136ff0c.webp",
         "width": 265
       }
     ],
     "story-video-placeholder.png": [
       {
         "height": 360,
-        "path": "optimized/story-video-placeholder.png/320-54ca38b43a88cd4e.webp",
+        "path": "optimized/story-video-placeholder.png/320-4cc78ad3de63083c.webp",
         "width": 320
       },
       {
         "height": 528,
-        "path": "optimized/story-video-placeholder.png/469-54ca38b43a88cd4e.webp",
+        "path": "optimized/story-video-placeholder.png/469-4cc78ad3de63083c.webp",
         "width": 469
       }
     ],
     "testimonial-1.webp": [
       {
         "height": 61,
-        "path": "optimized/testimonial-1.webp/74-47bf2560e8e2757d.webp",
+        "path": "optimized/testimonial-1.webp/74-e35898f03f881348.webp",
         "width": 74
       }
     ],
     "testimonial-2.webp": [
       {
         "height": 61,
-        "path": "optimized/testimonial-2.webp/74-3c7beb07116df81e.webp",
+        "path": "optimized/testimonial-2.webp/74-4e21ee73a396afcc.webp",
         "width": 74
       }
     ],
     "testimonial-3.webp": [
       {
         "height": 61,
-        "path": "optimized/testimonial-3.webp/74-910c16645017fd0e.webp",
+        "path": "optimized/testimonial-3.webp/74-11e005ced9fac9cd.webp",
         "width": 74
       }
     ],
     "testimonial-4.webp": [
       {
         "height": 61,
-        "path": "optimized/testimonial-4.webp/74-50c4c15aaaa409a8.webp",
+        "path": "optimized/testimonial-4.webp/74-618bab78b9fd56c6.webp",
         "width": 74
       }
     ],
     "testimony-audio-cover-1.png": [
       {
         "height": 338,
-        "path": "optimized/testimony-audio-cover-1.png/320-bccfa2b6563ec313.webp",
+        "path": "optimized/testimony-audio-cover-1.png/320-1d5892690873bbb4.webp",
         "width": 320
       },
       {
         "height": 575,
-        "path": "optimized/testimony-audio-cover-1.png/544-bccfa2b6563ec313.webp",
+        "path": "optimized/testimony-audio-cover-1.png/544-1d5892690873bbb4.webp",
         "width": 544
       }
     ],
     "testimony-audio-cover-2.png": [
       {
         "height": 357,
-        "path": "optimized/testimony-audio-cover-2.png/298-fd606bcb457226c2.webp",
+        "path": "optimized/testimony-audio-cover-2.png/298-62bc7e0ae006259a.webp",
         "width": 298
       }
     ],
     "testimony-audio-cover-3.png": [
       {
         "height": 370,
-        "path": "optimized/testimony-audio-cover-3.png/287-911dcf8785781a0d.webp",
+        "path": "optimized/testimony-audio-cover-3.png/287-dae35a1b30b82e4b.webp",
         "width": 287
       }
     ],
     "testimony-audio-cover-4.png": [
       {
         "height": 367,
-        "path": "optimized/testimony-audio-cover-4.png/296-fe8633e472be06cf.webp",
+        "path": "optimized/testimony-audio-cover-4.png/296-b49b7a9b629a7345.webp",
         "width": 296
       }
     ]

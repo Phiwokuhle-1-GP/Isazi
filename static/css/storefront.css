@@ -111,3 +111,9 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:9px}
  .scroll-home .featured-layout .section-heading h2{font-size:clamp(19px,5.5vw,23px)}
  .scroll-home .product-grid>.product-card{flex-basis:44%;min-width:0}
 }
+
+/* Simple cellphone checkout: large targets and clear product QR. */
+[hidden]{display:none!important}.pep-picker{display:grid;gap:12px}.simple-register{max-width:680px}.simple-register select{max-width:100%}.product-qr{display:flex;align-items:center;justify-content:space-between;gap:24px}.product-qr img{max-width:220px;object-fit:contain;background:white;border:16px solid white}.simple-register input,.simple-register select{min-height:48px}.login details{margin-top:24px}.login summary{cursor:pointer;padding:12px 0}
+@media(max-width:760px){.product-qr{flex-direction:column;align-items:flex-start}.simple-register .two-col{grid-template-columns:1fr}.simple-register h1{font-size:28px}.simple-register{padding:20px}input,select,textarea{font-size:16px}}
+
+.quick-product-card{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);border-radius:16px;max-width:680px;margin:0 auto 20px;background:#f6faf5}.quick-product-card img{width:80px;height:80px;object-fit:cover;border-radius:12px}.quick-product-card p{margin:6px 0 0}.checkout-layout details summary{padding:14px 0;cursor:pointer}

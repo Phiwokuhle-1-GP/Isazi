@@ -1,0 +1,1 @@
+{% if quick_product_card %}<div class="quick-product-card"><img src="{{ image_url(quick_product_card.image,320) }}" width="80" height="80" alt="{{ quick_product_card.name }}"><div><b>{{ quick_product_card.name }}</b><p>1 item · {{ quick_product_card.price|money }}</p></div></div>{% endif %}

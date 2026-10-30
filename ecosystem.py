@@ -135,6 +135,8 @@ def register_ecosystem(app, db, admin_only):
         if test_order and test_order['payment_test']:
             return
         order = connection.execute('SELECT * FROM orders WHERE id=?', (order_id,)).fetchone()
+        if order['email'].endswith('@phone.invalid'):
+            return
         link = public_base() + url_for('confirmation', token=order['token']) if public_base() else ''
         body = f"Hello {order['name']},\n\nOrder ISZ-{order_id:05d}\n{message}\nOrder status: {order['status']}\n"
         if link:
@@ -264,16 +266,22 @@ def register_ecosystem(app, db, admin_only):
         return wrapped
 
     def customer_session(customer):
-        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product') if key in session}
+        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product','quick_product','after_auth_quick') if key in session}
         session.clear();session.update(retained)
         session['customer_id']=customer['id'];session['customer_version']=customer['auth_version'];session.permanent=True
 
     def customer_destination():
+        quick=session.pop('after_auth_quick',None)
+        if isinstance(quick,int):
+            session['quick_product']=quick
+            return url_for('checkout')
         product_id=session.pop('after_auth_product',None)
         return url_for('product',product_id=product_id) if isinstance(product_id,int) else url_for('eco.customer_account')
 
     @bp.route('/account/register',methods=['GET','POST'])
     def customer_register():
+        if request.method=='POST' and 'pin' in request.form:
+            return app.extensions['simple_checkout']['register_phone'](customer_session,customer_destination,throttled,failure)
         if request.method=='POST':
             key='register:'+(request.remote_addr or 'unknown')
             if throttled(key):
@@ -293,6 +301,8 @@ def register_ecosystem(app, db, admin_only):
 
     @bp.route('/account/login',methods=['GET','POST'])
     def customer_login():
+        if request.method=='POST' and 'pin' in request.form:
+            return app.extensions['simple_checkout']['login_phone'](customer_session,customer_destination,throttled,failure)
         if request.method=='POST':
             key='customer:'+(request.remote_addr or 'unknown')
             if throttled(key):
@@ -323,6 +333,9 @@ def register_ecosystem(app, db, admin_only):
     @customer_only
     def customer_details(customer):
         name=request.form.get('name','').strip();phone=request.form.get('phone','').strip()
+        phone_account=app.extensions['simple_checkout']['account'](customer)
+        if phone_account:
+            phone=phone_account['phone']
         if not 2<=len(name)<=120 or not re.fullmatch(r'[+\d ()-]{7,25}',phone):
             flash('Enter a valid name and contact number.','error')
         else:
@@ -729,9 +742,17 @@ def register_ecosystem(app, db, admin_only):
         if status not in DELIVERY_STATUSES or len(courier)>100 or len(reference)>180 or len(link)>1000 or (link and (parsed.scheme!='https' or not parsed.hostname or parsed.username or parsed.password)):
             flash('Choose a valid delivery status and use a valid HTTPS tracking URL.','error')
         else:
+            db().execute('BEGIN IMMEDIATE')
+            try:
+                app.extensions['simple_checkout']['delivery_guard'](db(),order_id,status,reference)
+            except ValueError as error:
+                db().rollback()
+                flash(str(error),'error')
+                return redirect(url_for('owner_order',order_id=order_id))
             db().execute('UPDATE order_extra SET delivery_status=?,courier=?,tracking_reference=?,tracking_url=?,updated_at=datetime(\'now\') WHERE order_id=?',(status,courier,reference,link,order_id))
             queue_update(db(),order_id,'delivery:'+secrets.token_hex(16),'Delivery update: '+status+(('. Tracking reference: '+reference) if reference else ''))
-            audit(db(),'Delivery updated',order_id,status);db().commit();flash('Delivery details saved and an email update drafted.','success')
+            app.extensions['simple_checkout']['dispatch_sms'](db(),order_id,status,reference)
+            audit(db(),'Delivery updated',order_id,status);db().commit();flash('Delivery details saved. Review the order message outbox for customer updates.','success')
         return redirect(url_for('owner_order',order_id=order_id))
 
     @bp.post('/owner/order/<int:order_id>/refund')
@@ -817,6 +838,8 @@ def register_ecosystem(app, db, admin_only):
         order=db().execute('SELECT * FROM orders WHERE token=?',(token,)).fetchone()
         if not order:
             abort(404)
+        if order['fulfillment']=='pep':
+            abort(409,'PEP transfer orders require owner confirmation.')
         if extra_for(db(),order['id'])['payment_test']:
             abort(409,'Test orders cannot be sent to a live payment provider.')
         config=payfast_config()
@@ -836,6 +859,8 @@ def register_ecosystem(app, db, admin_only):
         connection.commit()
         names=order['name'].split(' ',1)
         fields={'merchant_id':str(option('PAYFAST_MERCHANT_ID')),'merchant_key':str(option('PAYFAST_MERCHANT_KEY')),'return_url':public_base()+url_for('confirmation',token=token)+'?payment=return','cancel_url':public_base()+url_for('confirmation',token=token)+'?payment=cancel','notify_url':public_base()+url_for('eco.payfast_itn'),'name_first':names[0][:100],'name_last':(names[1] if len(names)>1 else '')[:100],'email_address':order['email'][:100],'m_payment_id':payment_id,'amount':f"{order['total']/100:.2f}",'item_name':f"Isazi order ISZ-{order['id']:05d}"}
+        if order['email'].endswith('@phone.invalid'):
+            fields.pop('email_address',None)
         fields['signature']=gateway.signature(list(fields.items()),str(option('PAYFAST_PASSPHRASE')),outgoing=True)
         return render_template('payfast.html',order=order,fields=fields,host=config['host'],title='Secure payment')
 
@@ -904,7 +929,7 @@ def register_ecosystem(app, db, admin_only):
                 if old.startswith('refund_key_') and old!=key:
                     session.pop(old,None)
             session.setdefault(key,secrets.token_hex(24))
-        return dict(finance=financials(db(),order_id),delivery=extra_for(db(),order_id),delivery_statuses=DELIVERY_STATUSES,refunds=db().execute('SELECT * FROM refunds WHERE order_id=? ORDER BY id DESC',(order_id,)).fetchall(),receipts=db().execute('SELECT * FROM payments_received WHERE order_id=? ORDER BY id DESC',(order_id,)).fetchall())
+        return dict(**app.extensions['simple_checkout']['order_info'](order_id),finance=financials(db(),order_id),delivery=extra_for(db(),order_id),delivery_statuses=DELIVERY_STATUSES,refunds=db().execute('SELECT * FROM refunds WHERE order_id=? ORDER BY id DESC',(order_id,)).fetchall(),receipts=db().execute('SELECT * FROM payments_received WHERE order_id=? ORDER BY id DESC',(order_id,)).fetchall())
 
     def checkout_addresses():
         customer=current_customer()

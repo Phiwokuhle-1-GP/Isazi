@@ -68,6 +68,8 @@ def register_client_demo(app, db, eco):
         order = db().execute('SELECT * FROM orders WHERE token=?',(token,)).fetchone()
         if not order:
             abort(404)
+        if order['fulfillment']=='pep':
+            abort(409,'PEP transfer orders require owner confirmation; simulated gateway payment is unavailable.')
         extra=db().execute('SELECT payment_test FROM order_extra WHERE order_id=?',(order['id'],)).fetchone()
         if not extra or not extra['payment_test']:
             abort(409,'Only an order placed in payment test mode can use simulated payments.')

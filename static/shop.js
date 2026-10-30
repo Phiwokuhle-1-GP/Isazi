@@ -6,8 +6,15 @@ if (checkout) {
   const address = document.querySelector('#address');
   const updateTotals = () => {
     const subtotal = Number(checkout.dataset.subtotal);
-    const shipping = fulfillment.value === 'randburg' && subtotal <= 60000 ? 5000 : 0;
     const zar = cents => new Intl.NumberFormat('en-ZA', {style: 'currency', currency: 'ZAR'}).format(cents / 100);
+    if(fulfillment.value==='pep'){
+      const fee=checkout.dataset.pepFee;
+      const shipping=subtotal>60000 ? 0 : fee!=='' ? Number(fee) : null;
+      document.querySelector('#shipping-total').textContent=shipping===null?'Contact us for pricing':zar(shipping);
+      document.querySelector('#order-total').textContent=shipping===null?zar(subtotal)+' + delivery':zar(subtotal+shipping);
+      address.required=false;return;
+    }
+    const shipping = fulfillment.value === 'randburg' && subtotal <= 60000 ? 5000 : 0;
     document.querySelector('#shipping-total').textContent = zar(shipping);
     document.querySelector('#order-total').textContent = zar(subtotal + shipping);
     address.required = fulfillment.value === 'randburg';
@@ -146,3 +153,49 @@ document.querySelectorAll('.scroll-home .featured-layout .product-grid, .scroll-
   rail.addEventListener('scroll', update, {passive:true}); window.addEventListener('resize', update);
   update();
 });
+
+// Sequential requests bound memory use and make each result independently visible.
+const storyBatch = document.querySelector('#story-batch-upload');
+if (storyBatch) {
+  let uploading = false;
+  window.addEventListener('beforeunload', event => {
+    if (uploading) { event.preventDefault(); event.returnValue = ''; }
+  });
+  storyBatch.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (uploading) return;
+    const input = storyBatch.querySelector('[name="videos"]');
+    const files = Array.from(input.files);
+    if (!files.length) return;
+    const list = document.querySelector('#story-upload-progress');
+    const summary = document.querySelector('#story-upload-summary');
+    const button = storyBatch.querySelector('button');
+    list.replaceChildren(); uploading = true; button.disabled = true; input.disabled = true;
+    let success = 0;
+    for (const file of files) {
+      const item = document.createElement('li'); list.appendChild(item);
+      if (file.size > 250 * 1024 * 1024 || !/\.(mp4|webm)$/i.test(file.name)) {
+        item.textContent = file.name + ': skipped — use MP4/WebM under 250 MB.'; continue;
+      }
+      item.textContent = file.name + ': uploading…';
+      const body = new FormData(); body.append('video', file);
+      body.append('csrf_token', storyBatch.querySelector('[name="csrf_token"]').value);
+      try {
+        const result = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest(); xhr.open('POST', storyBatch.action);
+          xhr.upload.onprogress = e => { if (e.lengthComputable) item.textContent = file.name + ': uploading ' + Math.round(e.loaded/e.total*100) + '%'; };
+          xhr.upload.onload = () => { item.textContent = file.name + ': creating desktop and mobile videos…'; };
+          xhr.onload = () => {
+            try { const data = JSON.parse(xhr.responseText); if (xhr.status !== 201) reject(new Error(data.error || 'Upload failed.')); else resolve(data); }
+            catch { reject(new Error('Session expired or server interrupted processing. Check the library before retrying.')); }
+          };
+          xhr.onerror = () => reject(new Error('Connection lost. Check the library before retrying.'));
+          xhr.send(body);
+        });
+        item.textContent = result.title + ': ready in the video library.'; success++;
+      } catch (error) { item.textContent = file.name + ': ' + error.message; }
+    }
+    uploading = false; button.disabled = false; input.disabled = false; input.value = '';
+    summary.textContent = success + ' of ' + files.length + ' videos published. Refresh this page to edit titles and covers. Check failed files before selecting them again.';
+  });
+}

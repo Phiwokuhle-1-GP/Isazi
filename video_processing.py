@@ -35,14 +35,14 @@ def transcode_upload(upload, directory):
         with tempfile.TemporaryDirectory(prefix='isazi-video-') as scratch:
             original = Path(scratch) / ('input' + Path(upload.filename).suffix.lower())
             upload.save(original)
-            for label, width, height, rate in [('desktop',1280,720,'1800k'),('mobile',854,480,'750k')]:
+            for label, width, height, rate in [('desktop',1280,720,'2500k'),('mobile',854,480,'1200k')]:
                 encoded = Path(scratch) / (label + '.mp4')
                 command = [encoder,'-nostdin','-hide_banner','-loglevel','error','-y',
                            '-protocol_whitelist','file,pipe','-threads','1','-i',str(original),
                            '-map','0:v:0','-map','0:a:0?','-map_metadata','-1','-map_chapters','-1',
                            '-vf',f"scale=w='min({width},iw)':h='min({height},ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1",
-                           '-c:v','libx264','-preset','veryfast','-crf','27','-maxrate',rate,
-                           '-bufsize',rate,'-pix_fmt','yuv420p','-r','30','-threads','1',
+                           '-c:v','libx264','-preset','fast','-crf','23','-maxrate',rate,
+                           '-bufsize',rate,'-pix_fmt','yuv420p','-threads','1',
                            '-c:a','aac','-b:a','96k','-ac','2','-movflags','+faststart',str(encoded)]
                 try:
                     result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,

@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT=Path(__file__).resolve().parent
-STYLES=['style.css','layout.css','scroll.css','demo.css','ecosystem.css','mobile.css','storefront.css']
+STYLES=['style.css','layout.css','scroll.css','demo.css','ecosystem.css','mobile.css','storefront.css','quick-purchase.css']
 
 
 def build():
