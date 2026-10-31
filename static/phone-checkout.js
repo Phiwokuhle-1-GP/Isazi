@@ -24,3 +24,11 @@ document.querySelectorAll('[data-branch-search]').forEach(search=>{
     options.filter(o=>!o.value || o.value===value || o.text.toLowerCase().includes(query)).forEach(o=>select.add(new Option(o.text,o.value,false,o.value===value)));
   });
 });
+
+// Ask for account details only after a checkout payment/delivery choice.
+const paymentChoice=document.querySelector('[data-payment-choice]');
+if(paymentChoice){
+ const accountFields=document.querySelector('[data-checkout-account]');
+ const updateAccount=()=>{accountFields.hidden=!paymentChoice.value;accountFields.disabled=!paymentChoice.value;};
+ paymentChoice.addEventListener('change',updateAccount);updateAccount();
+}

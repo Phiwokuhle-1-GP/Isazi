@@ -56,7 +56,7 @@ class EcosystemTests(unittest.TestCase):
         self.assertNotIn(b'href="/#shop">Shop</a>',response.data)
         response=self.client.get('/shop')
         self.assertIn(b'Herbal Combo Pack',response.data)
-        self.assertEqual(response.data.count(b'class="product-card"'),6)
+        self.assertEqual(response.data.count(b'class="product-card"'),8)
         self.assertIn(b'All Products',response.data)
         self.assertIn(b'No reviews yet',response.data)
         for url in ['/track','/account/login','/account/register','/agent/login','/product/1','/contact']:

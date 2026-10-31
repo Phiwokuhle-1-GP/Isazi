@@ -70,3 +70,42 @@ def transcode_upload(upload, directory):
         raise
     finally:
         _encoder_slot.release()
+
+
+def extract_testimonial_audio(upload, directory):
+    """Extract speech as AAC; publish no video track or original upload."""
+    if not _encoder_slot.acquire(blocking=False):
+        raise ValueError('Another recording is processing. Please wait and try again.')
+    destination = None
+    try:
+        encoder = ffmpeg_executable()
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+        token = secrets.token_hex(16)
+        with tempfile.TemporaryDirectory(prefix='isazi-audio-') as scratch:
+            original = Path(scratch) / ('input' + Path(upload.filename).suffix.lower())
+            upload.save(original)
+            output = Path(scratch) / 'audio.m4a'
+            try:
+                result = subprocess.run([encoder,'-nostdin','-hide_banner','-loglevel','error','-y',
+                    '-protocol_whitelist','file,pipe','-threads','1','-i',str(original),
+                    '-map','0:a:0','-vn','-map_metadata','-1','-map_chapters','-1',
+                    '-c:a','aac','-b:a','96k','-ac','1','-movflags','+faststart',str(output)],
+                    stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,timeout=240,check=False)
+            except subprocess.TimeoutExpired:
+                raise ValueError('Audio processing took too long. Try a shorter recording.')
+            if result.returncode or not output.exists() or output.stat().st_size < 100:
+                raise ValueError('This video has no readable audio track. Upload a video with sound or an audio recording.')
+            destination = directory / ('upload-audio-' + token + '.m4a')
+            staging = directory / ('.processing-audio-' + token)
+            try:
+                shutil.copyfile(output, staging)
+                os.replace(staging, destination)
+            finally:
+                staging.unlink(missing_ok=True)
+        return destination.name
+    except Exception:
+        if destination: destination.unlink(missing_ok=True)
+        raise
+    finally:
+        _encoder_slot.release()

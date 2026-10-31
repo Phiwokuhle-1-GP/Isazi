@@ -45,8 +45,8 @@ class ClientDemoTests(unittest.TestCase):
         return token
 
     def test_isolated_stock_and_clear_demo_mode(self):
-        self.assertEqual(self.query('SELECT stock FROM products',normal=True),[(0,)]*6)
-        self.assertEqual(self.query('SELECT stock FROM products'),[(50,)]*6)
+        self.assertEqual(self.query('SELECT stock FROM products',normal=True),[(0,)]*8)
+        self.assertEqual(self.query('SELECT stock FROM products'),[(50,)]*8)
         self.assertEqual(self.client.get('/health').json['demo_mode'],True)
         self.assertNotIn(b'class="demo-mode-bar"',self.client.get('/').data)
         normal=self.normal.test_client()
@@ -94,7 +94,7 @@ class ClientDemoTests(unittest.TestCase):
         self.assertEqual(self.query('SELECT stock FROM products WHERE id=1')[0][0],48)
         create_app(self.config)
         self.assertEqual(self.query('SELECT stock FROM products WHERE id=1')[0][0],48)
-        self.assertEqual(self.query('SELECT stock FROM products',normal=True),[(0,)]*6)
+        self.assertEqual(self.query('SELECT stock FROM products',normal=True),[(0,)]*8)
         self.assertEqual(self.query('SELECT COUNT(*) FROM orders',normal=True)[0][0],0)
 
     def test_demo_completion_is_unavailable_in_normal_mode(self):
@@ -133,7 +133,7 @@ class ClientDemoTests(unittest.TestCase):
         with patch('app.ROOT',base),patch.dict(os.environ,{'ISAZI_CLIENT_DEMO':'1','DATA_DIR':str(Path(self.normal_db).parent)}):
             app=create_app()
         self.assertEqual(Path(app.config['DATABASE']),base/'instance-client-demo'/'shop.sqlite3')
-        self.assertEqual(self.query('SELECT stock FROM products',normal=True),[(0,)]*6)
+        self.assertEqual(self.query('SELECT stock FROM products',normal=True),[(0,)]*8)
         self.assertEqual(app.config['SESSION_COOKIE_NAME'],'isazi_client_demo')
 
     def test_cart_quantity_back_links_and_sample_checkout_details(self):

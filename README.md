@@ -1,3 +1,35 @@
+## V2.6.34 — Visual reference alignment
+
+Shared green/cream/yellow treatment across shop, products, cart, checkout, accounts, owner dashboard, contact and editorial pages. Mobile category chips, clearer cart cards, botanical sign-in panel, yellow purchase actions, rounded images. Existing desktop layout, prices, cellphone/PIN registration and payment processing retained.
+
+## V2.6.30 — Product photo update
+
+Replaces the two narrow portrait photos with landscape botanical product photos. Updates responsive WebP images and card fitting for desktop and mobile. Product names, prices and owner data remain unchanged.
+
+## V2.6.29 — Two new products
+
+Adds Nyawozeni (R150) and Soursop Leaves (R120), using the supplied photographs. Best Sellers now has eight default products in two desktop rows of four. Existing store data and subsequent owner edits are preserved. Actual stock remains owner-controlled; test inventory remains available for the dry run.
+
+# V2.6.29 — Product testimonial covers and audio playback
+
+Approved product cover order: Smolo, Mashamba, Herbal Combo, Smolo. Built-in covers/titles migrate; custom owner covers are preserved. New testimonial video uploads extract AAC mono 96kbps M4A only; originals are private and temporary, and no new video rendition is published. Videos without audio fail without changing the existing recording. Direct URLs and legacy videos can play through the audio player but are not recompressed: re-upload them for audio-only smaller files. Listen/Pause buttons retain product images and expose native seek controls. Story videos remain full video. Best Sellers displays up to eight active catalogue products with four columns on desktop; six existing products currently give four plus two. Two additional real products are needed for a full four-by-two grid. Mobile retains sideways scrolling. Includes all previous updates.
+
+# V2.6.27 — Heritage banner
+
+Adds the supplied traditional-attire portrait and heritage banner below Our Partners, beside Best Sellers on desktop and before Contact on mobile. Explore Our Heritage links to About Dr Ntuli. Includes all V2.6.26 checkout and playback fixes.
+
+# V2.6.26 — Account details at payment
+
+Browsing, cart additions and bundle Buy Now no longer require registration. Checkout first shows payment/delivery choice; cellphone/PIN fields appear after choosing. PEP branch preference and cart/bundle are retained through registration. Existing customers sign in and return to checkout. Full name and final order confirmation follow; guest order submission stays blocked when customer accounts are required. Includes V2.6.25 story playback and earlier updates.
+
+# V2.6.25 — Click story preview to play
+
+The complete story preview is a keyboard-accessible play button on home and About. It selects the first active story with a playable source, skipping empty slots. Opens the player and starts playback using the mobile rendition on phones. Watch Our Stories still opens the library. Without a published video the preview links to the empty library. Includes previous updates.
+
+# V2.6.24 — Navigation and story preview
+
+Removed the coming-soon overlay from homepage and About story previews. Slightly taller navigation on desktop and mobile, preserving the existing layout. Includes the story video library and all previous changes.
+
 # V2.6.23 — Story video library
 
 Watch Our Stories opens /videos on desktop and mobile. Owner > Media supports selecting multiple MP4/WebM files, sent sequentially (250 MB each). Each is published only after desktop 720p and mobile 480p H.264/AAC conversions finish. Originals transfer privately to server scratch storage before compression; this is not browser-side compression before network upload. Source originals are removed after conversion. CRF 23 / fast encoding balances visual quality and size; compression is lossy and size reductions depend on the source. Native playback, fast-start MP4, and mobile rendition selection are retained. Direct HTTPS video links bypass transcoding.

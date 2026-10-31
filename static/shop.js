@@ -199,3 +199,21 @@ if (storyBatch) {
     summary.textContent = success + ' of ' + files.length + ' videos published. Refresh this page to edit titles and covers. Check failed files before selecting them again.';
   });
 }
+
+// Product covers stay visible; testimonial uploads play as audio only.
+document.querySelectorAll('[data-audio-target]').forEach(button => {
+ const audio=document.getElementById(button.dataset.audioTarget);
+ const error=button.closest('article').querySelector('.audio-playback-error');
+ button.hidden=false; audio.hidden=true;
+ button.addEventListener('click',()=>{
+  error.hidden=true;
+  if(!audio.paused){audio.pause();return;}
+  document.querySelectorAll('.testimonial-audio').forEach(other=>{if(other!==audio)other.pause();});
+  audio.hidden=false;
+  audio.play().catch(()=>{error.hidden=false;});
+ });
+ audio.addEventListener('play',()=>{button.textContent='Ⅱ Pause';button.setAttribute('aria-pressed','true');});
+ const reset=()=>{button.textContent='▶ Listen now';button.setAttribute('aria-pressed','false');};
+ audio.addEventListener('pause',reset);audio.addEventListener('ended',reset);
+ audio.addEventListener('error',()=>{error.hidden=false;reset();});
+});

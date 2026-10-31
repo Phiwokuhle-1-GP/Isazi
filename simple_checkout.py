@@ -96,12 +96,12 @@ def register_simple(app, db, admin_only, eco):
         failure(key)
         if not phone or not re.fullmatch(r'[0-9]{4}',pin) or pin!=request.form.get('confirm_pin') or not request.form.get('consent') or preference not in ('pep','gateway') or (preference=='pep' and branch not in branches):
             flash('Enter a South African cellphone number, matching four-digit PINs, your delivery choice and privacy consent. Select a PEP branch for pickup.','error')
-            return render_template('customer_register.html',title='Create your account'),400
+            return render_template('checkout_access.html' if session.get('after_auth_checkout') else 'customer_register.html',title='Payment & delivery' if session.get('after_auth_checkout') else 'Create your account'),400
         # Never silently link an existing account based on an unverified phone number.
         existing=any(normalize_phone(row['phone'])==phone for row in db().execute('SELECT phone FROM customers'))
         if existing:
             flash('Unable to register these details. Sign in to your existing account or contact the team.','error')
-            return render_template('customer_register.html',title='Create your account'),400
+            return render_template('checkout_access.html' if session.get('after_auth_checkout') else 'customer_register.html',title='Payment & delivery' if session.get('after_auth_checkout') else 'Create your account'),400
         try:
             db().execute('BEGIN IMMEDIATE')
             internal=secrets.token_hex(16)+'@phone.invalid'
@@ -111,7 +111,7 @@ def register_simple(app, db, admin_only, eco):
             return redirect(destination())
         except sqlite3.IntegrityError:
             db().rollback();flash('Unable to register these details. Please sign in or contact the team.','error')
-            return render_template('customer_register.html',title='Create your account'),400
+            return render_template('checkout_access.html' if session.get('after_auth_checkout') else 'customer_register.html',title='Payment & delivery' if session.get('after_auth_checkout') else 'Create your account'),400
 
     def login_phone(customer_session, destination, throttled, failure):
         key='phone-login:'+(request.remote_addr or 'unknown');phone=normalize_phone(request.form.get('phone',''))

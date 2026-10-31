@@ -28,12 +28,13 @@ class UnifiedJourneyTests(unittest.TestCase):
             self.assertNotIn(b'Enquire about availability',page)
         self.assertEqual(self.fetch('SELECT stock,presentation_stock FROM products WHERE id=1'),[(0,50)])
         result=self.post('/cart/add/1',follow=False)
-        self.assertEqual(result.location,'/account/register')
+        self.assertNotEqual(result.location,'/account/register')
+        self.assertIn(b'Payment &amp; delivery',self.client.get('/checkout').data)
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)
         registered=self.register()
         self.assertIn(b'Smolo Body Cured System',registered.data)
-        self.assertIn(b'Back to Shop',registered.data)
-        self.order(quantity=2,email='dryrun@example.com')
+        self.assertIn(b'Confirm order',registered.data)
+        self.order(quantity=1,email='dryrun@example.com')
         token=self.fetch('SELECT token FROM orders')[0][0]
         self.post('/demo/order/'+token+'/payment/visa/complete')
         self.assertEqual(self.fetch('SELECT stock,presentation_stock FROM products WHERE id=1'),[(0,48)])
@@ -77,7 +78,8 @@ class UnifiedJourneyTests(unittest.TestCase):
 
     def test_checkout_requires_account_and_live_mode_uses_real_stock(self):
         with self.client.session_transaction() as session:session['cart']={'1':1}
-        self.assertEqual(self.client.get('/checkout').location,'/account/register')
+        self.assertEqual(self.client.get('/checkout').status_code,200)
+        self.assertIn(b'data-payment-choice',self.client.get('/checkout').data)
         self.app.config['DEMO_PAYMENTS_ENABLED']=False
         self.assertNotIn(b'Add to Cart',self.client.get('/product/1').data)
         self.assertEqual(self.fetch('SELECT stock,presentation_stock FROM products WHERE id=1'),[(0,50)])

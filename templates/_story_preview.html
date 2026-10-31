@@ -1,0 +1,4 @@
+<div class="story-visual story-portrait-preview">
+{% if story and story.video_source %}<button type="button" class="story-preview-trigger" data-video-src="{{ video_url(story.video_source) }}" data-video-mobile="{{ video_url(story.mobile_video_source) if story.mobile_video_source else '' }}" data-video-title="{{ story.title }}" data-video-poster="{{ image_url('story-dr-ntuli-poster-v2622.png') }}" aria-label="Play {{ story.title }}"><img src="{{ image_url('story-dr-ntuli-poster-v2622.png') }}" alt="Dr Ntuli" decoding="async"></button>
+{% else %}<a class="story-preview-trigger" href="{{ url_for('story_library') }}" aria-label="Open our video library"><img src="{{ image_url('story-dr-ntuli-poster-v2622.png') }}" alt="Dr Ntuli" decoding="async"></a>{% endif %}
+</div>

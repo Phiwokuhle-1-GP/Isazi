@@ -96,7 +96,9 @@ class PhoneCheckoutTests(unittest.TestCase):
 
     def test_qr_registration_keeps_single_product_and_preserves_cart(self):
         with self.client.session_transaction() as s:s['cart']={'2':2}
-        self.assertEqual(self.client.get('/buy/6').location,'/account/register')
+        self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
+        self.assertEqual(self.client.get('/buy/6').location,'/checkout')
+        self.assertIn(b'data-payment-choice',self.client.get('/checkout').data)
         result=self.register();self.assertIn(b'Confirm order',result.data)
         with self.client.session_transaction() as s:key=s['checkout_key']
         self.post('/checkout',dict(checkout_key=key,name='QR Customer',fulfillment='pep',branch_code=self.branch,consent='on'))
@@ -215,3 +217,27 @@ class PhoneCheckoutTests(unittest.TestCase):
         self.post('/owner/product/1',dict(name='New bundle',category='General Health',price='200',stock='5',description='Bundle of herbal products',active='on',is_bundle='on'))
         self.assertEqual(self.fetch('SELECT is_bundle FROM products WHERE id=1')[0][0],1)
         self.assertEqual(self.client.get('/product/1/qr.png').status_code,200)
+
+    def test_account_creation_is_delayed_until_payment_choice(self):
+        self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
+        result=self.post('/cart/add/1',{'quantity':'2'},follow=False)
+        self.assertNotEqual(result.location,'/account/register')
+        with self.client.session_transaction() as s:self.assertEqual(s['cart'],{'1':2})
+        page=self.client.get('/checkout')
+        self.assertEqual(page.status_code,200)
+        self.assertLess(page.data.index(b'data-payment-choice'),page.data.index(b'name="phone"'))
+        self.assertEqual(self.fetch('SELECT COUNT(*) FROM customers')[0][0],0)
+        failed=self.register(confirm_pin='9999')
+        self.assertEqual(failed.status_code,400)
+        self.assertIn(b'data-payment-choice',failed.data)
+        result=self.register()
+        self.assertIn(b'Confirm order',result.data)
+        with self.client.session_transaction() as s:self.assertEqual(s['cart'],{'1':2})
+        self.assertEqual(self.fetch('SELECT preference,branch_code FROM phone_accounts')[0],('pep',self.branch))
+
+    def test_payment_checkout_blocks_unregistered_order_post(self):
+        self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
+        self.post('/cart/add/1')
+        page=self.post('/checkout',{'name':'Guest','fulfillment':'collection','consent':'on'})
+        self.assertIn(b'data-payment-choice',page.data)
+        self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)

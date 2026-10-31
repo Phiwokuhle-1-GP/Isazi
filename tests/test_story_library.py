@@ -33,3 +33,22 @@ class StoryLibraryTests(test_store.StoreTests):
         self.assertEqual(before,self.fetch('SELECT count(*) FROM videos'))
         res=self.post('/owner/media/stories',{'video':(io.BytesIO(b'not a valid video'),'bad.mp4')},follow=False)
         self.assertEqual(res.status_code,400)
+
+    def test_preview_plays_published_story_when_first_slot_empty(self):
+        self.owner()
+        with self.app.app_context():
+            import sqlite3
+            with sqlite3.connect(self.db_path) as con:
+                con.execute("INSERT INTO videos(kind,title,poster,video_source,mobile_video_source,active) VALUES('story','Published story','story-dr-ntuli-poster-v2622.png','https://example.com/desktop.mp4','https://example.com/mobile.mp4',1)")
+        for route in ['/', '/about']:
+            page=self.client.get(route).get_data(as_text=True)
+            self.assertIn('class="story-preview-trigger" data-video-src="https://example.com/desktop.mp4"',page)
+            self.assertIn('data-video-mobile="https://example.com/mobile.mp4"',page)
+            self.assertIn('aria-label="Play Published story"',page)
+            self.assertIn('id="video-dialog"',page)
+            self.assertIn('Watch Our Stories',page)
+        with sqlite3.connect(self.db_path) as con:
+            con.execute("UPDATE videos SET active=0 WHERE title='Published story'")
+        page=self.client.get('/').get_data(as_text=True)
+        self.assertNotIn('https://example.com/desktop.mp4',page)
+        self.assertIn('aria-label="Open our video library"',page)

@@ -60,6 +60,6 @@ class HomeImageTests(unittest.TestCase):
         self.assertNotIn(b'css/sage.css',response.data)
         self.assertIn(b'hero-natural-meadow.webp',response.data)
         self.assertIn(b'demo-product-1.webp',response.data)
-        self.assertIn(b'testimony-audio-cover-1.png',response.data)
+        self.assertIn(b'demo-product-1.webp',response.data)
         self.assertIn(b'<h1>IYENQABA INKUNZI',response.data)
         self.assertEqual(response.data.count(b'class="testimonial-card"'),4)

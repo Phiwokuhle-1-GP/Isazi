@@ -46,7 +46,7 @@ class NormalReleaseTests(unittest.TestCase):
 
     def test_normal_home_has_latest_shared_visuals_and_owner_media_controls(self):
         page=self.client.get('/').data
-        for item in [b'hero-natural-meadow.webp',b'dr-ntuli-original.png',b'hero-right-photo',b'Listen to testimonials',b'testimonials-title-tile',b'testimonials-grid',b'Free delivery on orders over R600',b'Nationwide delivery',b'footer-socials',b'testimony-audio-cover-4.png']:
+        for item in [b'hero-natural-meadow.webp',b'dr-ntuli-original.png',b'hero-right-photo',b'Listen to testimonials',b'testimonials-title-tile',b'testimonials-grid',b'Free delivery on orders over R600',b'Nationwide delivery',b'footer-socials',b'demo-product-1.webp']:
             self.assertIn(item,page)
         self.assertNotIn(b'CLIENT DEMO',page)
         with self.client.get('/static/css/ecosystem.css') as css:

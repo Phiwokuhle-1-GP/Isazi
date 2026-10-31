@@ -33,8 +33,8 @@ class AudioTestimonialTests(unittest.TestCase):
         self.assertIn('Listen to testimonials', section)
         self.assertNotIn('class="audio-label"', section)
         self.assertEqual(section.count('class="testimonial-card"'), 4)
-        for n in range(1, 5):
-            self.assertIn(f'testimony-audio-cover-{n}.png', section)
+        for name in ['demo-product-1.webp','demo-product-3.webp','demo-combo.webp']:
+            self.assertIn(name, section)
         self.assertNotIn('Coming soon', section)
         self.assertNotIn('coming soon', section)
         self.assertNotIn('<audio', section)
@@ -85,6 +85,17 @@ class AudioTestimonialTests(unittest.TestCase):
             row = db.execute('SELECT title,video_source,poster,audio_source FROM videos WHERE id=2').fetchone()
         self.assertEqual(row,('Existing custom title','https://example.com/old.mp4','upload-existing.webp',''))
 
+    def test_legacy_builtin_covers_upgrade_without_touching_recordings(self):
+        old_db = Path(self.tmp.name)/'legacy-covers.sqlite3'
+        create_app({'TESTING':True,'DATABASE':str(old_db),'UPLOAD_DIR':self.tmp.name+'/uploads'})
+        with sqlite3.connect(old_db) as db:
+            for i, poster in enumerate(['testimonial-1.webp','demo-testimonial-2.webp','testimony-audio-cover-3.png'],2):
+                db.execute('UPDATE videos SET poster=?,video_source=? WHERE id=?',(poster,'https://example.com/keep.mp4',i))
+        create_app({'TESTING':True,'DATABASE':str(old_db),'UPLOAD_DIR':self.tmp.name+'/uploads'})
+        with sqlite3.connect(old_db) as db:
+            rows=db.execute('SELECT poster,video_source FROM videos WHERE id BETWEEN 2 AND 4 ORDER BY id').fetchall()
+        self.assertEqual(rows,[(p,'https://example.com/keep.mp4') for p in ['demo-product-1.webp','demo-product-3.webp','demo-combo.webp']])
+
     def test_story_slot_keeps_video_only_and_failed_audio_keeps_existing_recording(self):
         self.owner()
         self.post('/owner/media/1', {'title':'Our Story','active':'on','audio_url':'https://example.com/invalid-story.mp3'})
@@ -92,3 +103,38 @@ class AudioTestimonialTests(unittest.TestCase):
         self.post('/owner/media/2', {'title':'Audio testimony','active':'on','audio_url':'https://example.com/current.ogg'})
         self.post('/owner/media/2', {'title':'Audio testimony','active':'on','audio':(io.BytesIO(b'not a valid audio file'),'bad.wav')})
         self.assertEqual(self.fetch('SELECT audio_source FROM videos WHERE id=2')[0][0],'https://example.com/current.ogg')
+
+    def test_testimonial_video_upload_extracts_audio_without_publishing_video(self):
+        from test_video_media import MediaTests
+        from video_processing import ffmpeg_executable
+        import subprocess
+        self.owner()
+        payload=MediaTests.make_video()
+        self.post('/owner/media/2',dict(title='Previous',active='on',audio_url='https://example.com/previous.mp3'))
+        response=self.post('/owner/media/2',dict(title='Smolo story',active='on',audio_url='https://example.com/previous.mp3',video=(io.BytesIO(payload),'customer.mp4')))
+        source,desktop,mobile=self.fetch('SELECT audio_source,video_source,mobile_video_source FROM videos WHERE id=2')[0]
+        self.assertTrue(source.endswith('.m4a'),response.data)
+        self.assertEqual((desktop,mobile),('',''))
+        target=Path(self.tmp.name)/'uploads'/source
+        self.assertLess(target.stat().st_size,len(payload))
+        result=subprocess.run([ffmpeg_executable(),'-hide_banner','-i',str(target),'-f','null','-'],capture_output=True)
+        self.assertEqual(result.returncode,0)
+        self.assertIn(b'Audio: aac',result.stderr)
+        self.assertNotIn(b'Video:',result.stderr)
+        section=self.client.get('/').get_data(as_text=True).split('<section class="testimonials-section"')[1].split('</section>')[0]
+        self.assertIn(source,section)
+        self.assertIn('Listen now',section)
+        self.assertNotIn('<video',section)
+        self.assertEqual(list((Path(self.tmp.name)/'uploads').glob('upload-video-*')),[])
+
+    def test_silent_video_rejected_and_existing_audio_preserved(self):
+        from video_processing import ffmpeg_executable
+        import subprocess
+        self.owner()
+        self.post('/owner/media/2',dict(title='Existing recording',active='on',audio_url='https://example.com/voice.mp3'))
+        clip=Path(self.tmp.name)/'silent.mp4'
+        subprocess.run([ffmpeg_executable(),'-v','error','-f','lavfi','-i','color=c=green:s=64x64:d=0.2','-an','-c:v','libx264',str(clip)],check=True)
+        response=self.post('/owner/media/2',dict(title='New recording',active='on',video=(io.BytesIO(clip.read_bytes()),'silent.mp4')))
+        self.assertIn(b'no readable audio track',response.data)
+        self.assertEqual(self.fetch('SELECT audio_source FROM videos WHERE id=2')[0][0],'https://example.com/voice.mp3')
+        self.assertEqual(list((Path(self.tmp.name)/'uploads').glob('upload-audio-*')),[])

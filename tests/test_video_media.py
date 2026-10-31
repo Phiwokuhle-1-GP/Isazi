@@ -24,8 +24,8 @@ class MediaTests(unittest.TestCase):
             self.assertIn(('id="'+section+'"').encode(),response.data)
         self.assertEqual(response.data.count(b'class="testimonial-card"'),4)
         self.assertIn(b'#testimonials">Testimonials</a>',response.data)
-        self.assertEqual(response.headers['X-Isazi-Version'],'2.6.23')
-        self.assertEqual(self.client.get('/health').json['version'],'2.6.23')
+        self.assertEqual(response.headers['X-Isazi-Version'],'2.6.34')
+        self.assertEqual(self.client.get('/health').json['version'],'2.6.34')
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM videos')[0][0],5)
         self.assertEqual(self.client.get('/owner/media').status_code,302)
         self.assertEqual(self.post('/owner/media/2',{'title':'Unauthorised title'},follow=False).status_code,302)
@@ -36,10 +36,10 @@ class MediaTests(unittest.TestCase):
         self.post('/owner/media/2',dict(title='Customer story',person='Verified Customer',caption='<script>alert(1)</script>',video_url='https://example.com/story.mp4',active='on'))
         self.assertEqual(self.fetch('SELECT video_source FROM videos WHERE id=2')[0][0],'https://example.com/story.mp4')
         response=self.client.get('/')
-        self.assertIn(b'data-video-src="https://example.com/story.mp4"',response.data)
+        self.assertIn(b'<source src="https://example.com/story.mp4"',response.data)
         self.assertIn(b'&lt;script&gt;alert(1)',response.data)
         self.assertNotIn(b'<script>alert(1)',response.data)
-        self.assertIn(b'Play Customer story',response.data)
+        self.assertIn(b'Listen to Customer story',response.data)
 
     def test_rejects_non_media_url_and_disguised_upload(self):
         self.owner()
@@ -55,8 +55,8 @@ class MediaTests(unittest.TestCase):
         cover=io.BytesIO()
         Image.new('RGB',(160,100),'green').save(cover,'PNG')
         cover.seek(0)
-        self.post('/owner/media/2',dict(title='Uploaded story',person='',caption='Test caption',active='on',video=(io.BytesIO(payload),'story.mp4'),poster=(cover,'cover.png')))
-        source,poster,mobile=self.fetch('SELECT video_source,poster,mobile_video_source FROM videos WHERE id=2')[0]
+        self.post('/owner/media/1',dict(title='Uploaded story',person='',caption='Test caption',active='on',video=(io.BytesIO(payload),'story.mp4'),poster=(cover,'cover.png')))
+        source,poster,mobile=self.fetch('SELECT video_source,poster,mobile_video_source FROM videos WHERE id=1')[0]
         self.assertTrue(mobile.endswith('-mobile.mp4'))
         desktop=(Path(self.tmp.name)/'uploads'/source).read_bytes()
         self.assertLess(len(desktop),len(payload))
@@ -97,16 +97,16 @@ class MediaTests(unittest.TestCase):
 
     def test_corrupt_video_keeps_existing_and_no_partial_files(self):
         self.owner()
-        self.post('/owner/media/2',dict(title='Original story',video_url='https://example.com/old.mp4',active='on'))
+        self.post('/owner/media/1',dict(title='Original story',video_url='https://example.com/old.mp4',active='on'))
         payload=b'\x00\x00\x00\x18ftypisom'+b'\x00'*64
-        response=self.post('/owner/media/2',dict(title='New story',video=(io.BytesIO(payload),'broken.mp4'),active='on'))
+        response=self.post('/owner/media/1',dict(title='New story',video=(io.BytesIO(payload),'broken.mp4'),active='on'))
         self.assertIn(b'could not be processed',response.data)
-        self.assertEqual(self.fetch('SELECT title,video_source FROM videos WHERE id=2')[0],('Original story','https://example.com/old.mp4'))
+        self.assertEqual(self.fetch('SELECT title,video_source FROM videos WHERE id=1')[0],('Original story','https://example.com/old.mp4'))
         self.assertEqual(list((Path(self.tmp.name)/'uploads').glob('upload-video-*')),[])
 
     def test_second_encode_timeout_keeps_previous_video(self):
         self.owner()
-        self.post('/owner/media/2',dict(title='Original story',video_url='https://example.com/old.mp4',active='on'))
+        self.post('/owner/media/1',dict(title='Original story',video_url='https://example.com/old.mp4',active='on'))
         import video_processing
         real_run=video_processing.subprocess.run
         calls=[]
@@ -117,9 +117,9 @@ class MediaTests(unittest.TestCase):
             return real_run(command,**kwargs)
         payload=self.make_video()
         with patch('video_processing.subprocess.run',side_effect=run):
-            response=self.post('/owner/media/2',dict(title='New story',video=(io.BytesIO(payload),'story.mp4'),active='on'))
+            response=self.post('/owner/media/1',dict(title='New story',video=(io.BytesIO(payload),'story.mp4'),active='on'))
         self.assertIn(b'took too long',response.data)
-        self.assertEqual(self.fetch('SELECT video_source,mobile_video_source FROM videos WHERE id=2')[0],('https://example.com/old.mp4',''))
+        self.assertEqual(self.fetch('SELECT video_source,mobile_video_source FROM videos WHERE id=1')[0],('https://example.com/old.mp4',''))
         self.assertEqual(list((Path(self.tmp.name)/'uploads').glob('upload-video-*')),[])
 
     def test_portrait_variants_playback_clear_and_restart(self):

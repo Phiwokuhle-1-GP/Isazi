@@ -196,7 +196,7 @@ class StoreTests(unittest.TestCase):
         with self.client.get('/media/'+row[3]) as response:
             self.assertEqual(response.status_code,200)
         self.post('/owner/product/new',dict(name='New Product',category='General Health',price='50.00',stock='4',description='New verified product.',active='on'))
-        self.assertEqual(self.fetch('SELECT COUNT(*) FROM products')[0][0],7)
+        self.assertEqual(self.fetch('SELECT COUNT(*) FROM products')[0][0],9)
 
     def test_contact_and_stored_html_is_escaped(self):
         self.post('/contact',dict(name='<script>alert(1)</script>',email='test@example.com',message='<script>alert(2)</script>',consent='on'))
@@ -214,7 +214,7 @@ class StoreTests(unittest.TestCase):
     def test_init_preserves_existing_data_and_no_default_owner(self):
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM admins')[0][0],0)
         create_app({'TESTING':True,'DATABASE':self.db_path,'UPLOAD_DIR':str(Path(self.tmp.name)/'uploads')})
-        self.assertEqual(self.fetch('SELECT COUNT(*) FROM products')[0][0],6)
+        self.assertEqual(self.fetch('SELECT COUNT(*) FROM products')[0][0],8)
         self.assertEqual(self.fetch('SELECT stock FROM products WHERE id=1')[0][0],20)
 
 

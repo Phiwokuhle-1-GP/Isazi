@@ -266,11 +266,14 @@ def register_ecosystem(app, db, admin_only):
         return wrapped
 
     def customer_session(customer):
-        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product','quick_product','after_auth_quick') if key in session}
+        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product','quick_product','after_auth_quick','after_auth_checkout') if key in session}
         session.clear();session.update(retained)
         session['customer_id']=customer['id'];session['customer_version']=customer['auth_version'];session.permanent=True
 
     def customer_destination():
+        if session.pop('after_auth_checkout',False):
+            session.pop('after_auth_quick',None)
+            return url_for('checkout')
         quick=session.pop('after_auth_quick',None)
         if isinstance(quick,int):
             session['quick_product']=quick

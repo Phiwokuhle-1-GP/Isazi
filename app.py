@@ -19,10 +19,10 @@ from PIL import Image, UnidentifiedImageError
 from ecosystem import register_ecosystem, valid_email
 from simple_checkout import register_simple
 from client_demo import register_client_demo
-from video_processing import transcode_upload
+from video_processing import transcode_upload, extract_testimonial_audio
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.23'
+APP_VERSION = '2.6.34'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -32,6 +32,8 @@ SEEDS = [
  ('Isazi Immune Booster', 'Immune Support', 18000, 'product-4.webp'),
  ('Isazi Cleanse Mix', 'Digestive Health', 10000, 'product-5.webp'),
  ('Herbal Combo Pack', 'General Health', 55000, 'combo.webp'),
+ ('Nyawozeni', 'General Health', 15000, 'nyawozeni.png'),
+ ('Soursop Leaves', 'General Health', 12000, 'soursop-leaves.png'),
 ]
 VIDEO_SEEDS = [('story', 'Our Story', 'story-video-placeholder.png')] + [('testimonial', f'Customer testimony {n}', f'testimony-audio-cover-{n}.png') for n in range(1,5)]
 HOME_IMAGE_SLOTS = {
@@ -202,11 +204,6 @@ def create_app(test_config=None):
         purchase_endpoints={'cart_add','cart_update','cart_remove','checkout','quick_buy','demo.complete','eco.pay'}
         if session.get('admin') and request.endpoint in purchase_endpoints:
             abort(403,'Owners cannot purchase. Sign out and use a customer account, or open a separate browser profile.')
-        if request.endpoint in {'cart_add','checkout'} and app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not app.config.get('DEMO_MODE') and not eco['current_customer']():
-            if request.endpoint=='cart_add':
-                session['after_auth_product']=request.view_args['product_id']
-            flash('Create a customer account or sign in to continue shopping.','success')
-            return redirect(url_for('eco.customer_register'))
 
     def get_product(product_id, active=True):
         row = db().execute('SELECT * FROM products WHERE id=?' + (' AND active=1' if active else ''), (product_id,)).fetchone()
@@ -231,12 +228,23 @@ def create_app(test_config=None):
         except (TypeError, ValueError):
             abort(400, 'Please enter a valid quantity.')
 
+    def featured_story():
+        rows = db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id").fetchall()
+        legacy = settings().get('story_video', '')
+        for row in rows:
+            story = dict(row)
+            if not story['video_source'] and story['id'] == 1:
+                story['video_source'] = legacy
+            if story['video_source']:
+                return story
+        return None
+
     @app.route('/')
     def home():
         products = db().execute('SELECT * FROM products WHERE active=1 ORDER BY id LIMIT 6').fetchall()
-        story = db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id LIMIT 1").fetchone()
+        story = featured_story()
         testimonials = db().execute("SELECT * FROM videos WHERE kind='testimonial' AND active=1 ORDER BY id").fetchall()
-        return render_template('home.html', products=[customer_product(p) for p in products], story=story, testimonials=testimonials, title='Traditional herbal wellness')
+        return render_template('home.html', products=[customer_product(p) for p in products], story=story, testimonials=testimonials, bestsellers=[customer_product(p) for p in db().execute('SELECT * FROM products WHERE active=1 ORDER BY id LIMIT 8').fetchall()], title='Traditional herbal wellness')
 
     @app.route('/shop')
     def shop():
@@ -314,9 +322,6 @@ def create_app(test_config=None):
             return redirect(url_for('product',product_id=product_id))
         session['quick_product']=product_id
         session.pop('checkout_key',None)
-        if not eco['current_customer']():
-            session['after_auth_quick']=product_id
-            return redirect(url_for('eco.customer_register'))
         return redirect(url_for('checkout'))
 
     @app.route('/checkout', methods=['GET', 'POST'])
@@ -335,6 +340,9 @@ def create_app(test_config=None):
             return redirect(url_for('shop'))
         if app.config.get('DEMO_MODE'):
             demo['ensure_customer']()
+        if app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not eco['current_customer']() and not app.config.get('DEMO_MODE'):
+            session['after_auth_checkout'] = True
+            return render_template('checkout_access.html', title='Payment & delivery')
         session.setdefault('checkout_key', secrets.token_hex(24))
         subtotal = sum(x['total'] for x in lines)
         if request.method == 'POST':
@@ -428,7 +436,7 @@ def create_app(test_config=None):
 
     @app.route('/about')
     def about():
-        return render_template('about.html', story=db().execute("SELECT * FROM videos WHERE kind='story' AND active=1 ORDER BY id LIMIT 1").fetchone(), title='About Dr Ntuli')
+        return render_template('about.html', story=featured_story(), title='About Dr Ntuli')
 
     @app.route('/health-tips')
     def tips():
@@ -720,6 +728,7 @@ def create_app(test_config=None):
                     raise ValueError('Use a direct .mp4 or .webm file URL, not a YouTube or social media page.')
                 source = remote
                 mobile_source = ''
+            extracted_audio = ''
             upload = request.files.get('video')
             if upload and upload.filename:
                 upload.stream.seek(0, os.SEEK_END)
@@ -732,17 +741,22 @@ def create_app(test_config=None):
                 ext = Path(upload.filename).suffix.lower()
                 if not ((ext == '.mp4' and header[4:8] == b'ftyp') or (ext == '.webm' and header[:4] == b'\x1aE\xdf\xa3')):
                     raise ValueError('The file must be a valid MP4 or WebM video.')
-                source, mobile_source = transcode_upload(upload, app.config['UPLOAD_DIR'])
-                created_files.extend(Path(app.config['UPLOAD_DIR']) / name for name in (source, mobile_source))
+                if video['kind'] == 'testimonial':
+                    extracted_audio = extract_testimonial_audio(upload, app.config['UPLOAD_DIR'])
+                    created_files.append(Path(app.config['UPLOAD_DIR']) / extracted_audio)
+                    source, mobile_source = '', ''
+                else:
+                    source, mobile_source = transcode_upload(upload, app.config['UPLOAD_DIR'])
+                    created_files.extend(Path(app.config['UPLOAD_DIR']) / name for name in (source, mobile_source))
             if request.form.get('clear_video'):
                 source = ''
                 mobile_source = ''
-            audio_source = video['audio_source']
+            audio_source = extracted_audio or video['audio_source']
             audio_remote = request.form.get('audio_url', '').strip()
             audio_upload = request.files.get('audio')
             if video['kind'] != 'testimonial' and (audio_remote or (audio_upload and audio_upload.filename)):
                 raise ValueError('Audio uploads belong to testimonial slots. Use the video field for Our Story.')
-            if audio_remote:
+            if audio_remote and not extracted_audio:
                 parsed = urlsplit(audio_remote)
                 if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or len(audio_remote)>1500 or not parsed.path.lower().endswith(('.mp3','.m4a','.ogg','.wav')):
                     raise ValueError('Use a direct HTTPS MP3, M4A, OGG or WAV audio file URL.')
@@ -885,6 +899,11 @@ def create_app(test_config=None):
             db().execute('INSERT OR IGNORE INTO videos(id,kind,title,poster) VALUES(?,?,?,?)', (index, kind, title, poster))
         for n, old_title in enumerate(['My Health Journey','Digestive Health','Men’s Health','Immune Support'],1):
             db().execute("UPDATE videos SET title=? WHERE id=? AND kind='testimonial' AND title=? AND person='' AND caption=''", (f'Customer testimony {n}',n+1,old_title))
+        # Upgrade built-in testimonial artwork only; keep owner-uploaded covers.
+        covers = [('demo-product-1.webp','Smolo Body Cured System'), ('demo-product-3.webp','Mashamba Mix'), ('demo-combo.webp','Herbal Combo Pack'), ('demo-product-1.webp','Smolo Body Cured System')]
+        for n, (poster, label) in enumerate(covers, 1):
+            db().execute("UPDATE videos SET poster=? WHERE id=? AND kind='testimonial' AND poster IN (?,?,?)", (poster,n+1,f'testimony-audio-cover-{n}.png',f'testimonial-{n}.webp',f'demo-testimonial-{n}.webp'))
+            db().execute("UPDATE videos SET title=? WHERE id=? AND kind='testimonial' AND title=?", (label,n+1,f'Customer testimony {n}'))
         for key, value in DEFAULTS.items():
             db().execute('INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)', (key, value))
         # Apply the requested delivery threshold without resetting other store text.
@@ -893,6 +912,13 @@ def create_app(test_config=None):
             for name, category, price, image_name in SEEDS:
                 db().execute('INSERT INTO products(name,category,price,description,image,stock) VALUES(?,?,?,?,?,?)',
                              (name, category, price, 'Traditional herbal product from Isazi Herbal Shop. Ingredients, pack size and directions must be confirmed with our team before use. Product information is being finalised.', image_name, 0))
+        # One-time catalog addition for existing stores; preserve later owner edits/deletions.
+        if not db().execute("SELECT 1 FROM settings WHERE key='catalog_products_2629'").fetchone():
+            for name, category, price, image_name in SEEDS[-2:]:
+                if not db().execute('SELECT 1 FROM products WHERE image=? OR lower(name)=lower(?)', (image_name,name)).fetchone():
+                    db().execute('INSERT INTO products(name,category,price,description,image,stock) VALUES(?,?,?,?,?,?)',
+                                 (name,category,price,'Herbal product from Isazi Herbal Shop. Contact our team for pack size, ingredients and directions.',image_name,0))
+            db().execute("INSERT INTO settings(key,value) VALUES('catalog_products_2629','1')")
         db().commit()
 
     eco=register_ecosystem(app,db,admin_only)

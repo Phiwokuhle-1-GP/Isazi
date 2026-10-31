@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block content %}{% include '_quick_product.html' %}
+<div class="page-heading"><span class="eyebrow light">CHECKOUT</span><h1>Payment & delivery</h1><p>Choose how you would like to receive and pay for your order.</p><a href="{{ url_for('cart') }}">← Back to cart</a></div>
+<form action="{{ url_for('eco.customer_register') }}" method="post" class="panel login form-stack" id="checkout-access">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Choose your payment and delivery option<select name="preference" data-pep-choice data-payment-choice required><option value="">Choose an option</option><option value="pep" {{ 'selected' if request.form.get('preference')=='pep' }}>PEP pickup · Capitec bank transfer</option><option value="gateway" {{ 'selected' if request.form.get('preference')=='gateway' }}>Delivery or collection · online payment</option></select></label>
+{% include '_pep_picker.html' %}
+<p data-pep-fields>Use your cellphone number as your payment reference. Your order waits for payment confirmation before dispatch to your selected PEP branch.</p>
+<fieldset data-checkout-account style="border:0;padding:0;margin:0" class="form-stack"><legend>Your cellphone & PIN</legend><p>Save your order and follow its progress. No email or full profile needed.</p>
+<label>Cellphone number<input name="phone" type="tel" autocomplete="tel" maxlength="20" value="{{ request.form.get('phone','') }}" placeholder="060 123 4567" required></label>
+<div class="two-col"><label>Create a 4-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label><label>Confirm PIN<input name="confirm_pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label></div>
+<label class="check"><input type="checkbox" name="consent" required>I agree to the <a href="{{ url_for('policies') }}">privacy and store information</a> and order updates to my cellphone.</label>
+<button class="button">Continue to order details →</button></fieldset>
+<a href="{{ url_for('eco.customer_login') }}">Already have a PIN? Sign in to continue</a>
+</form>{% endblock %}
