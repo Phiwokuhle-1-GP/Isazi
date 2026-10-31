@@ -1,6 +1,7 @@
 """Isazi Herbal Shop — Flask storefront with SQLite and manual order confirmation."""
 import csv
 import functools
+import hashlib
 import io
 import os
 import re
@@ -22,7 +23,7 @@ from client_demo import register_client_demo
 from video_processing import transcode_upload, extract_testimonial_audio
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.36'
+APP_VERSION = '2.6.37'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -97,7 +98,8 @@ def create_app(test_config=None):
     data_dir = ROOT / 'instance-client-demo' if demo_requested else Path(os.environ.get('DATA_DIR', ROOT / 'instance'))
     data_dir.mkdir(parents=True, exist_ok=True)
     app.config.update(DATABASE=str(data_dir / 'shop.sqlite3'), UPLOAD_DIR=str(data_dir / 'uploads'),
-                      MAX_CONTENT_LENGTH=312 * 1024 * 1024, SESSION_COOKIE_HTTPONLY=True,
+                      MAX_CONTENT_LENGTH=312 * 1024 * 1024, MAX_FORM_MEMORY_SIZE=128 * 1024,
+                      MAX_FORM_PARTS=64, SESSION_COOKIE_HTTPONLY=True,
                       SESSION_COOKIE_SAMESITE='Lax', SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE') == '1',
                       PERMANENT_SESSION_LIFETIME=timedelta(hours=2), TESTING=False, CUSTOMER_CHECKOUT_REQUIRED=True, DEMO_MODE=demo_requested, DEMO_PAYMENTS_ENABLED=os.environ.get('DEMO_PAYMENTS_ENABLED')=='1')
     if test_config:
@@ -147,10 +149,38 @@ def create_app(test_config=None):
 
     @app.before_request
     def protect():
-        if request.method == 'POST' and request.endpoint != 'eco.payfast_itn':
-            supplied = request.form.get('csrf_token', '')
-            if not supplied or not secrets.compare_digest(supplied, session.get('csrf', '')):
-                abort(400, 'The form expired. Reload the page and try again.')
+        if session.get('admin'):
+            admin = db().execute('SELECT password_hash FROM admins WHERE id=1').fetchone()
+            fingerprint = hashlib.sha256(admin['password_hash'].encode()).hexdigest() if admin else None
+            if not fingerprint or session.get('owner_auth_version') != fingerprint:
+                session.clear()
+        # Bound public input before parsing or running password hashing. Large
+        # multipart bodies are reserved for authenticated owner upload handlers.
+        upload_endpoints = {'owner_product', 'owner_home_image_save', 'owner_story_upload',
+                            'owner_media_save', 'eco.owner_product_gallery'}
+        owner_upload = session.get('admin') and request.endpoint in upload_endpoints
+        request.max_content_length = app.config['MAX_CONTENT_LENGTH'] if owner_upload else 65536
+        if request.content_length is not None and request.content_length > request.max_content_length:
+            abort(413)
+        if len(request.query_string) > 8192:
+            abort(414)
+        for key, values in request.args.lists():
+            if len(values) != 1 or len(key) > 100 or len(values[0]) > 4096:
+                abort(400, 'Invalid query parameters.')
+        if len(request.args) > 64:
+            abort(400, 'Too many query parameters.')
+        if request.method == 'POST':
+            for key, values in request.form.lists():
+                if len(values) != 1 or len(key) > 100 or len(values[0]) > 16384:
+                    abort(400, 'Invalid form parameters.')
+                if key in {'password','current_password','confirm','pin','confirm_pin','current_pin'} and len(values[0]) > 256:
+                    abort(400, 'Invalid credential length.')
+            if len(request.form) > 64:
+                abort(400, 'Too many form parameters.')
+            if request.endpoint != 'eco.payfast_itn':
+                supplied = request.form.get('csrf_token', '')
+                if not supplied or len(supplied) != 64 or not supplied.isascii() or not secrets.compare_digest(supplied, session.get('csrf', '')):
+                    abort(400, 'The form expired. Reload the page and try again.')
 
     @app.after_request
     def headers(response):
@@ -347,7 +377,7 @@ def create_app(test_config=None):
         subtotal = sum(x['total'] for x in lines)
         if request.method == 'POST':
             key = request.form.get('checkout_key', '')
-            if not secrets.compare_digest(key, session.get('checkout_key', '')):
+            if not key or not key.isascii() or len(key) > 128 or not secrets.compare_digest(key, session.get('checkout_key', '')):
                 abort(400, 'This checkout has expired. Reload and try again.')
             previous = db().execute('SELECT token FROM orders WHERE checkout_key=?', (key,)).fetchone()
             if previous:
@@ -490,6 +520,7 @@ def create_app(test_config=None):
             if admin and check_password_hash(admin['password_hash'], request.form.get('password', '')):
                 session.clear()
                 session['admin'] = True
+                session['owner_auth_version'] = hashlib.sha256(admin['password_hash'].encode()).hexdigest()
                 session.permanent = True
                 db().execute('DELETE FROM login_attempts WHERE ip=?', (ip,))
                 db().commit()

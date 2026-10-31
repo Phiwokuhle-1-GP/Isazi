@@ -64,7 +64,8 @@ def register_simple(app, db, admin_only, eco):
 
     def qr_base():
         raw=str(app.config.get('PUBLIC_BASE_URL') or os.environ.get('PUBLIC_BASE_URL') or config().get('shop_url','')).rstrip('/')
-        parsed=urlsplit(raw)
+        try: parsed=urlsplit(raw)
+        except ValueError: return ''
         if parsed.scheme!='https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ('','/'):
             return ''
         return raw

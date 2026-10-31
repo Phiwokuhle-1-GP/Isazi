@@ -12,7 +12,10 @@ class OwnerWorkspaceTests(unittest.TestCase):
         self.app=create_app({'TESTING':True,'DATABASE':self.path,'UPLOAD_DIR':str(Path(self.temp.name)/'uploads')})
         self.app.secret_key='test-only-secret'
         self.client=self.app.test_client()
-        with self.client.session_transaction() as session: session['admin']=True
+        self.app.test_cli_runner().invoke(args=['create-owner','--password','test-owner-password-long'])
+        self.client.get('/owner/login')
+        with self.client.session_transaction() as session: token=session['csrf']
+        self.client.post('/owner/login',data={'csrf_token':token,'password':'test-owner-password-long'})
         with sqlite3.connect(self.path) as db:
             for i,name,status,test,delivery in [(1,'Real paid','Paid',0,'Payment confirmed'),(2,'Test paid','Paid',1,'Not arranged'),(3,'Real pending','Awaiting confirmation',0,'Not arranged'),(4,'Already sent','Paid',0,'In transit')]:
                 db.execute("INSERT INTO orders(id,token,checkout_key,name,email,phone,fulfillment,address,notes,subtotal,shipping,total,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",(i,str(i),str(i),name,'example@example.com','0600000000','collection','','',10000,0,10000,status))

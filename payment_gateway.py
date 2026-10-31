@@ -37,7 +37,7 @@ def signature(pairs, passphrase, *, outgoing=False):
 
 
 def valid_signature(pairs, supplied, passphrase):
-    return bool(supplied) and hmac.compare_digest(signature(pairs, passphrase), supplied.lower())
+    return isinstance(supplied, str) and len(supplied) == 32 and supplied.isascii() and hmac.compare_digest(signature(pairs, passphrase), supplied.lower())
 
 
 def cents(raw):

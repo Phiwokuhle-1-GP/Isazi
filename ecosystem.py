@@ -99,7 +99,8 @@ def register_ecosystem(app, db, admin_only):
 
     def public_base():
         raw = str(option('PUBLIC_BASE_URL')).rstrip('/')
-        parsed = urlsplit(raw)
+        try: parsed = urlsplit(raw)
+        except ValueError: return ''
         if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
             return ''
         if parsed.hostname in ('localhost', '127.0.0.1', '::1') or parsed.hostname.endswith('.local'):
@@ -741,7 +742,8 @@ def register_ecosystem(app, db, admin_only):
         if not extra_for(db(),order_id):
             abort(404)
         status=request.form.get('delivery_status','');courier=request.form.get('courier','').strip();reference=request.form.get('tracking_reference','').strip();link=request.form.get('tracking_url','').strip()
-        parsed=urlsplit(link)
+        try: parsed=urlsplit(link)
+        except ValueError: abort(400, 'Use a valid HTTPS tracking URL.')
         if status not in DELIVERY_STATUSES or len(courier)>100 or len(reference)>180 or len(link)>1000 or (link and (parsed.scheme!='https' or not parsed.hostname or parsed.username or parsed.password)):
             flash('Choose a valid delivery status and use a valid HTTPS tracking URL.','error')
         else:

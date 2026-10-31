@@ -9,7 +9,7 @@
   },
   {
     "path": "APPLY_UPDATE.ps1",
-    "sha256": "1ec645fea31baaa78d6985a93fcfa03a2d92531361dbe16af36c49925bbff20f"
+    "sha256": "3967d0045e2f91727b944ab374ce8bb1d3a0968b35b88bfc5b182017bff3fd4b"
   },
   {
     "path": "CLIENT_DEMO_GUIDE.md",
@@ -37,7 +37,7 @@
   },
   {
     "path": "PUSH_GITHUB_WINDOWS.ps1",
-    "sha256": "d1697299d5eb450e5577a6cf0e76c993ae25e2ce0c4e3ef2b0ecf3dc866fb8a4"
+    "sha256": "cc38ea5f37acc1f648764d401d7962e0fe36fcda854f5489a01eaaba16a5bcb6"
   },
   {
     "path": "Procfile",
@@ -45,11 +45,15 @@
   },
   {
     "path": "README.md",
-    "sha256": "507a6e64dc792fa1552f7e9f03fe311ba6957aae9eba7e7509a7d14e4cac6a28"
+    "sha256": "321f2122e3d62efc326ea77a1e8a441a998da763f5bac4e893de510194f384cd"
   },
   {
     "path": "RESET_OWNER_WINDOWS.ps1",
     "sha256": "28780be0f02d6a1b8d8cfb875d8e64c13b128ecda633a408aefe329dc6031790"
+  },
+  {
+    "path": "SECURITY_AUDIT.md",
+    "sha256": "7804fe8b2a2c31c79d205f00e8ea350633500e2739342a259119420afe5cc9c7"
   },
   {
     "path": "START_DEMO_WINDOWS.ps1",
@@ -57,7 +61,7 @@
   },
   {
     "path": "START_WINDOWS.ps1",
-    "sha256": "28a8a700d1d036e0df36ec934bbde37cd723dba666359ba840817674b2394692"
+    "sha256": "1839bcc74dffface23a56edfd249c144ddcaef5d789e49318819915f644845b2"
   },
   {
     "path": "VIDEO_UPLOADS.md",
@@ -69,7 +73,7 @@
   },
   {
     "path": "app.py",
-    "sha256": "9818d26c71c290441793d1512df8bf5069e8753fd1b739997c3c7b52e172cd2f"
+    "sha256": "f563a0f6671b7a0f7f2b519bb94a3a8e70bc2b44255cea856adaebd1f4b7dcbe"
   },
   {
     "path": "asset_manifest.json",
@@ -85,7 +89,7 @@
   },
   {
     "path": "ecosystem.py",
-    "sha256": "c359912c2b67d6627a753163b150c8f6f9eb24414da56111e382fc0311cf57ae"
+    "sha256": "a0180d91c0e190f6a24e31f8a803bccfc56b91881e57a9e78ac0baf3badf1a4c"
   },
   {
     "path": "optimize_assets.py",
@@ -93,7 +97,7 @@
   },
   {
     "path": "payment_gateway.py",
-    "sha256": "4aaf5bb890694836ac9bedcc4e011d71f406f6ed7a7a6d57cf60fa100a6be157"
+    "sha256": "2fb7a7306d619428d5bd6ae8b0d914a2f78d3f5c228b66aceaa287f4f0107502"
   },
   {
     "path": "performance.py",
@@ -113,7 +117,7 @@
   },
   {
     "path": "simple_checkout.py",
-    "sha256": "9dcf4b71ff15a38ad72c1661980451f5552603a6be4205f315f64c3e4e75d435"
+    "sha256": "4e704bd4f920fded30930f99ca1448274af3c1cf8f1e92db96d17126479e8aa3"
   },
   {
     "path": "static/css/demo.css",
@@ -1041,7 +1045,11 @@
   },
   {
     "path": "tests/test_owner_workspace.py",
-    "sha256": "44a9c20cf3686b9bd0811f5ad13d309bf0ae0815f87f98d9e83ee0b2be5f98bc"
+    "sha256": "b289993a7e5190b9d78ae826bac84f2b74d9e4ca3abb0b5f480610f785aa7409"
+  },
+  {
+    "path": "tests/test_parameter_security.py",
+    "sha256": "69eaa171c770e5e93f0a770d3e740f55fb072c92a1a9f0e3516f3c6aa9171a6a"
   },
   {
     "path": "tests/test_performance.py",
@@ -1065,7 +1073,7 @@
   },
   {
     "path": "tests/test_video_media.py",
-    "sha256": "d5c2a61feb1a6d957236099d8ced76aaa4099fae71273a3b031ba71af338772e"
+    "sha256": "03d36a44163c87729b39ec5aac67b95fcb727f111075591190819dffb7975c38"
   },
   {
     "path": "tools/performance_audit.py",
