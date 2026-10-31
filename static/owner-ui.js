@@ -1,0 +1,2 @@
+document.querySelectorAll('.owner-menu').forEach(button => button.addEventListener('click', () => {const open = document.body.classList.toggle('owner-menu-open');document.querySelectorAll('.owner-menu').forEach(b => b.setAttribute('aria-expanded',String(open)));}));
+document.addEventListener('keydown', e => {if(e.key==='Escape'){document.body.classList.remove('owner-menu-open');document.querySelectorAll('.owner-menu').forEach(b=>b.setAttribute('aria-expanded','false'));}});

@@ -43,7 +43,7 @@ class MainPaymentModeTests(unittest.TestCase):
         self.owner()
         report=self.client.get('/owner/reports?format=csv')
         self.assertNotIn(b'ISZ-00001',report.data)
-        self.assertIn(b'Test payment',self.client.get('/owner').data)
+        self.assertIn(b'Test payment',self.client.get('/owner?view=orders&scope=test').data)
         self.assertIn(b'Yes - simulated',self.client.get('/owner/orders.csv').data)
 
     def test_switch_off_and_existing_real_order_are_protected(self):

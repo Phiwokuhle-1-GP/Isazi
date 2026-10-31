@@ -202,7 +202,7 @@ class StoreTests(unittest.TestCase):
         self.post('/contact',dict(name='<script>alert(1)</script>',email='test@example.com',message='<script>alert(2)</script>',consent='on'))
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM enquiries')[0][0],1)
         self.owner()
-        response=self.client.get('/owner')
+        response=self.client.get('/owner?view=enquiries')
         self.assertIn(b'&lt;script&gt;alert(2)',response.data)
         self.assertNotIn(b'<script>alert(2)',response.data)
 

@@ -46,8 +46,8 @@ class UnifiedJourneyTests(unittest.TestCase):
         token=self.fetch('SELECT token FROM orders')[0][0]
         self.post('/demo/order/'+token+'/payment/ozow/complete')
         self.owner()
-        self.assertIn(b'ISZ-00001',self.client.get('/owner').data)
-        self.assertIn(b'Saved test orders',self.client.get('/owner').data)
+        self.assertIn(b'ISZ-00001',self.client.get('/owner?view=orders&scope=test').data)
+        self.assertIn(b'Test activity',self.client.get('/owner').data)
         self.assertIn(b'ISZ-00001',self.client.get('/owner/reports?scope=test&format=csv').data)
         self.assertNotIn(b'ISZ-00001',self.client.get('/owner/reports?scope=real&format=csv').data)
         for status in ['Ready','Completed']:

@@ -8,7 +8,7 @@ import secrets
 import sqlite3
 import time
 from urllib.parse import urlsplit
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -22,7 +22,7 @@ from client_demo import register_client_demo
 from video_processing import transcode_upload, extract_testimonial_audio
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.34'
+APP_VERSION = '2.6.35'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -509,12 +509,41 @@ def create_app(test_config=None):
     @app.route('/owner')
     @admin_only
     def owner():
-        orders = db().execute('SELECT o.*,e.payment_test FROM orders o JOIN order_extra e ON e.order_id=o.id ORDER BY o.id DESC LIMIT 200').fetchall()
-        counts = db().execute("SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status IN ('Paid','Ready','Completed') THEN total ELSE 0 END),0) AS confirmed, SUM(CASE WHEN status='Awaiting confirmation' THEN 1 ELSE 0 END) AS pending FROM orders WHERE id NOT IN (SELECT order_id FROM order_extra WHERE payment_test=1)").fetchone()
+        view = request.args.get('view', 'overview')
+        if view not in ('overview', 'orders', 'products', 'enquiries'):
+            view = 'overview'
+        scope = request.args.get('scope', 'real')
+        if scope not in ('real', 'test', 'all'):
+            scope = 'real'
+        clauses, args = [], []
+        if scope != 'all':
+            clauses.append('e.payment_test=?'); args.append(int(scope == 'test'))
+        status = request.args.get('status', '')
+        dispatch_clause = "o.status IN ('Paid','Ready') AND e.delivery_status IN ('Not arranged','Booked','Payment confirmed')"
+        if status == 'dispatch':
+            clauses.append(dispatch_clause)
+        elif status in ('Awaiting confirmation','Paid','Ready','Completed','Cancelled'):
+            clauses.append('o.status=?'); args.append(status)
+        query = request.args.get('q', '').strip()[:120]
+        if query:
+            clauses.append("(o.name LIKE ? OR printf('ISZ-%05d',o.id) LIKE ?)"); args.extend(['%'+query+'%']*2)
+        orders = db().execute('SELECT o.*,e.payment_test FROM orders o JOIN order_extra e ON e.order_id=o.id WHERE '+(' AND '.join(clauses) or '1=1')+' ORDER BY o.id DESC LIMIT 200', args).fetchall()
+        counts = db().execute("SELECT COUNT(*) AS orders, SUM(CASE WHEN status='Awaiting confirmation' THEN 1 ELSE 0 END) AS pending FROM orders WHERE id NOT IN (SELECT order_id FROM order_extra WHERE payment_test=1)").fetchone()
         test_counts=db().execute("SELECT COUNT(*) AS orders,COALESCE((SELECT SUM(p.amount) FROM payments_received p JOIN order_extra x ON x.order_id=p.order_id WHERE x.payment_test=1),0) AS received FROM order_extra WHERE payment_test=1").fetchone()
-        products = db().execute('SELECT * FROM products ORDER BY id').fetchall()
+        owner_stats = {
+            'received': db().execute('SELECT COALESCE(SUM(p.amount),0) FROM payments_received p JOIN order_extra e ON e.order_id=p.order_id WHERE e.payment_test=0').fetchone()[0],
+            'dispatch': db().execute('SELECT COUNT(*) FROM orders o JOIN order_extra e ON e.order_id=o.id WHERE e.payment_test=0 AND '+dispatch_clause).fetchone()[0],
+            'low_stock': db().execute('SELECT COUNT(*) FROM products WHERE active=1 AND stock<5').fetchone()[0],
+        }
+        today = datetime.now(timezone.utc).date()
+        first = today - timedelta(days=29)
+        amounts = dict(db().execute("SELECT date(p.created_at),SUM(p.amount) FROM payments_received p JOIN order_extra e ON e.order_id=p.order_id WHERE e.payment_test=0 AND date(p.created_at) BETWEEN ? AND ? GROUP BY date(p.created_at)",(first.isoformat(),today.isoformat())).fetchall())
+        trend = [((first+timedelta(days=i)).isoformat(), amounts.get((first+timedelta(days=i)).isoformat(),0)) for i in range(30)]
+        peak = max([v for _,v in trend]+[1])
+        points = ' '.join(f'{10+i*580/29:.1f},{145-v/peak*125:.1f}' for i,(_,v) in enumerate(trend))
+        products = db().execute('SELECT * FROM products'+(' WHERE active=1 AND stock<5' if request.args.get('stock')=='low' else '')+' ORDER BY id').fetchall()
         enquiries = db().execute('SELECT * FROM enquiries ORDER BY id DESC LIMIT 100').fetchall()
-        return render_template('owner.html', orders=orders, counts=counts, test_counts=test_counts, products=products, enquiries=enquiries, title='Owner dashboard')
+        return render_template('owner.html', orders=orders, counts=counts, test_counts=test_counts, products=products, enquiries=enquiries, title='Owner dashboard', view=view, scope=scope, owner_stats=owner_stats, trend=trend, trend_points=points, trend_total=sum(v for _,v in trend), trend_start=first.isoformat(), trend_end=today.isoformat())
 
     @app.route('/owner/product/new', methods=['GET', 'POST'])
     @app.route('/owner/product/<int:product_id>', methods=['GET', 'POST'])

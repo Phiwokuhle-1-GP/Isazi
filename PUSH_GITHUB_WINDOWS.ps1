@@ -1,4 +1,4 @@
-param([string]$CheckoutPath = (Join-Path $env:USERPROFILE "Downloads\Isazi_Git_2634"))
+param([string]$CheckoutPath = (Join-Path $env:USERPROFILE "Downloads\Isazi_Git_2635"))
 $ErrorActionPreference = "Stop"
 $source = $PSScriptRoot
 $repoUrl = "https://github.com/Phiwokuhle-1-GP/Isazi.git"
@@ -30,7 +30,7 @@ Invoke-Git -GitArgs @("pull", "--ff-only", "origin", "main")
 $oldHead = (& git rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw "Cannot identify the existing repository head." }
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$backupBranch = "backup/before-store-v2.6.34-$stamp"
+$backupBranch = "backup/before-store-v2.6.35-$stamp"
 Invoke-Git -GitArgs @("branch", $backupBranch, $oldHead)
 Write-Host "Publishing backup branch first. GitHub may ask you to sign in."
 Invoke-Git -GitArgs @("push", "origin", $backupBranch)
@@ -57,7 +57,7 @@ if ($diffStatus -eq 1) {
         Invoke-Git -GitArgs @("config", "user.name", $authorName)
         Invoke-Git -GitArgs @("config", "user.email", $authorEmail)
     }
-    Invoke-Git -GitArgs @("commit", "-m", "V2.6.34: cellphone PIN checkout, PEP transfers and product QR purchase")
+    Invoke-Git -GitArgs @("commit", "-m", "V2.6.35: cellphone PIN checkout, PEP transfers and product QR purchase")
 } else { Write-Host "Repository already contains this release." }
 Invoke-Git -GitArgs @("push", "origin", "main")
 $newHead = (& git rev-parse HEAD).Trim()

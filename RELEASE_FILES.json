@@ -9,7 +9,7 @@
   },
   {
     "path": "APPLY_UPDATE.ps1",
-    "sha256": "8c4990d372f1cd50f27afbfd65a99b23f5224bcb7afa217b1bb2c7c2b117abba"
+    "sha256": "5063a6c31be65c25176006e625f10bd1603786cfd55afa5836668e34a24f4137"
   },
   {
     "path": "CLIENT_DEMO_GUIDE.md",
@@ -37,7 +37,7 @@
   },
   {
     "path": "PUSH_GITHUB_WINDOWS.ps1",
-    "sha256": "93fe9492b2e1b91eb47444283781282779701f46b1864406e9de506230a3692b"
+    "sha256": "50ef99d71ee47a241522fe5abeeae8a26cb9ea7eb488ba84481fe856e5a40578"
   },
   {
     "path": "Procfile",
@@ -45,7 +45,7 @@
   },
   {
     "path": "README.md",
-    "sha256": "c7a79e58083bfa648c58145c69d282c80813730db9f014679eeb5b3232ff9919"
+    "sha256": "46399a06db40d696fafec728958ed1daef70f548e1e99fb1259ca04e1ab93761"
   },
   {
     "path": "RESET_OWNER_WINDOWS.ps1",
@@ -57,7 +57,7 @@
   },
   {
     "path": "START_WINDOWS.ps1",
-    "sha256": "193520aba6bb971accc06eaf1ab00ed6fe5d9cba0a62f436fa8682b0284be6b3"
+    "sha256": "3374808b94232591d350767b42bb5a0462f42a744c19c5f24513c3ca39f850c0"
   },
   {
     "path": "VIDEO_UPLOADS.md",
@@ -69,7 +69,7 @@
   },
   {
     "path": "app.py",
-    "sha256": "6a84e86a771d6dcea85ea6c2ee77994bf1e7c5aa05e0ccc57c3159ab71737cd6"
+    "sha256": "37742a3b85f03c9029049c298dd92c1b4acc3a5ee4e165c57017b9a3440ae334"
   },
   {
     "path": "asset_manifest.json",
@@ -130,6 +130,10 @@
   {
     "path": "static/css/mobile.css",
     "sha256": "ed444a0a304603208b348fc68c6bf174e42f69fa1274e76531aba2e7bbd3c860"
+  },
+  {
+    "path": "static/css/owner-ui.css",
+    "sha256": "680c4f79e58ebe44065b9dd0e9f7a710590ee0f6e8d277dc611025859fd24082"
   },
   {
     "path": "static/css/quick-purchase.css",
@@ -784,6 +788,10 @@
     "sha256": "4aab0415677b55cd6c14a702f3827f332c0a8af132133e2eb2b515edbfbf55ed"
   },
   {
+    "path": "static/owner-ui.js",
+    "sha256": "23def187221d0f15a508fc7a40ae85a693ac358d3e09511eb1d2155e8f766a08"
+  },
+  {
     "path": "static/phone-checkout.js",
     "sha256": "39fa6de7846e596017b365bd05a96e1a278d41324569641b8a01224a2b69624f"
   },
@@ -794,6 +802,10 @@
   {
     "path": "templates/_journey.html",
     "sha256": "8093a864ad9c4ff6350bea6959922e144ce5455eaab107c057d5b31d195499e1"
+  },
+  {
+    "path": "templates/_owner_nav.html",
+    "sha256": "26d78288726c2706d0a135afb101346d08d529f1802b149ffd279316e3bd9a2a"
   },
   {
     "path": "templates/_payment_methods.html",
@@ -849,7 +861,7 @@
   },
   {
     "path": "templates/base.html",
-    "sha256": "f702759b7ea48e6ab62fba691aa46f0691122487f699db10890cd7fe76119aa2"
+    "sha256": "5c169ff712d69b7e8e59471a099688e68059bb06ce14627a7a6c66c768a77516"
   },
   {
     "path": "templates/cart.html",
@@ -905,7 +917,7 @@
   },
   {
     "path": "templates/owner.html",
-    "sha256": "9188600fe04df9d3fb442e9b5bca05e4e0eb4e3bca5f36430a510854ca8d739e"
+    "sha256": "764f3977ea48c1edb133afef1a6ae0cd021d6bdc60467204290d2bc073c036d8"
   },
   {
     "path": "templates/owner_agents.html",
@@ -937,7 +949,7 @@
   },
   {
     "path": "templates/owner_order.html",
-    "sha256": "19b257f6af3a8ef24b951ae6d9aa3940fdbaf2d66324546ccc75228ebe9bd44d"
+    "sha256": "62e0b7a256f04288aeadabfc2bde7a938d5ac4ec78b901c556266305bc4db0ca"
   },
   {
     "path": "templates/owner_phone_checkout.html",
@@ -1021,11 +1033,15 @@
   },
   {
     "path": "tests/test_main_payment_mode.py",
-    "sha256": "114fecd2499f226fcbbd01e68ce7f9d54d1641c513265ed3bf6bb40e7446ba7d"
+    "sha256": "f5a29e5c0a48f39e211a393e86315ea920d93027308ad6488a1aa2eba50334ab"
   },
   {
     "path": "tests/test_normal_release.py",
     "sha256": "e23028f46c7646f2448eb35dedb249e7c1642b1819c7fa04ae1726c6563c494b"
+  },
+  {
+    "path": "tests/test_owner_workspace.py",
+    "sha256": "44a9c20cf3686b9bd0811f5ad13d309bf0ae0815f87f98d9e83ee0b2be5f98bc"
   },
   {
     "path": "tests/test_performance.py",
@@ -1037,7 +1053,7 @@
   },
   {
     "path": "tests/test_store.py",
-    "sha256": "4d1ca33b41c029b4864125c966bf7aac2df10e3836959f27d2681d97a4a0c0f0"
+    "sha256": "dec43f1729e892c50dace2b9d69463030964a799f99c2518716a637cdf6c1da8"
   },
   {
     "path": "tests/test_story_library.py",
@@ -1045,11 +1061,11 @@
   },
   {
     "path": "tests/test_unified_journey.py",
-    "sha256": "0d328d5891330fc0b295e417ab6dc28d1f1d413e3d947a5b42be6c98c9fb36eb"
+    "sha256": "e9f2b1115c946163bbf1a866f1c381e6ef2624489558c4d04a5492e6dfb2c135"
   },
   {
     "path": "tests/test_video_media.py",
-    "sha256": "8b0024818905c6f6effd50f43994f638cbeb97c380425fbf6dd5eaca0ddfd6b8"
+    "sha256": "e21cfaa44f20b5be7fb19ef26579ba02b3ea5c2a972c2193b9957bc2f870fac8"
   },
   {
     "path": "video_processing.py",
