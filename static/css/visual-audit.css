@@ -93,3 +93,11 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{border:1px solid #d
 .scroll-home .media-and-tips .testimonial-card h3{margin:14px 0;min-height:2.6em}
 .scroll-home .media-and-tips .testimonial-poster{border-radius:14px 14px 0 0}
 @media(max-width:767px){.scroll-home .media-and-tips .section-heading{min-height:44px}.scroll-home .media-and-tips .article-grid,.scroll-home .media-and-tips .testimonials-grid{padding-bottom:12px;flex:none}.scroll-home .media-and-tips .testimonial-card{height:auto}}
+
+/* Optional quick purchase uses a text link, with aligned card actions. */
+.quick-buy-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 8px;background:transparent;border:0;border-radius:0;color:var(--forest);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.quick-buy-link:hover{text-decoration-thickness:2px}
+.product-quick-slot{min-height:44px;text-align:center}
+.product-quick-slot .bundle-quick-purchase{margin-top:0}
+.product-body .product-name{flex:none;min-height:2.6em}
+.product-body .bundle-desktop-qr{text-align:left}
