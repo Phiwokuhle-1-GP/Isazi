@@ -72,3 +72,15 @@ class PerformanceTests(unittest.TestCase):
         self.assertIn('no-store',response.headers['Cache-Control'])
         self.assertNotIn('public',response.headers['Cache-Control'])
         self.assertIn(b'csrf_token',gzip.decompress(response.data))
+
+    def test_checkout_script_is_scoped_but_payment_controls_keep_it(self):
+        for route in ['/', '/shop', '/product/1']:
+            self.assertNotIn('phone-checkout.js', self.client.get(route).get_data(as_text=True))
+        with self.client.session_transaction() as session: token=session['csrf']
+        self.client.post('/cart/add/1', data={'quantity':'1','csrf_token':token})
+        self.assertIn('phone-checkout.js',self.client.get('/checkout').get_data(as_text=True))
+        self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
+        page=self.client.get('/checkout').get_data(as_text=True)
+        self.assertIn('data-payment-choice',page)
+        self.assertIn('phone-checkout.js',page)
+        self.assertIn('phone-checkout.js',self.client.get('/account/register').get_data(as_text=True))

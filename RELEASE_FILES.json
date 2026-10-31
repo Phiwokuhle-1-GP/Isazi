@@ -9,7 +9,7 @@
   },
   {
     "path": "APPLY_UPDATE.ps1",
-    "sha256": "5063a6c31be65c25176006e625f10bd1603786cfd55afa5836668e34a24f4137"
+    "sha256": "1ec645fea31baaa78d6985a93fcfa03a2d92531361dbe16af36c49925bbff20f"
   },
   {
     "path": "CLIENT_DEMO_GUIDE.md",
@@ -29,7 +29,7 @@
   },
   {
     "path": "PERFORMANCE_NOTES.md",
-    "sha256": "01bf2842506e01a529898987af670bfdc29f6958bce81ffdd6866791c54d5a4e"
+    "sha256": "b59fb4cacdbea39134b11966aa444239ae2b15657992f816ef8d6b812bf87759"
   },
   {
     "path": "PRODUCTION_HANDOFF.md",
@@ -37,7 +37,7 @@
   },
   {
     "path": "PUSH_GITHUB_WINDOWS.ps1",
-    "sha256": "50ef99d71ee47a241522fe5abeeae8a26cb9ea7eb488ba84481fe856e5a40578"
+    "sha256": "d1697299d5eb450e5577a6cf0e76c993ae25e2ce0c4e3ef2b0ecf3dc866fb8a4"
   },
   {
     "path": "Procfile",
@@ -45,7 +45,7 @@
   },
   {
     "path": "README.md",
-    "sha256": "46399a06db40d696fafec728958ed1daef70f548e1e99fb1259ca04e1ab93761"
+    "sha256": "507a6e64dc792fa1552f7e9f03fe311ba6957aae9eba7e7509a7d14e4cac6a28"
   },
   {
     "path": "RESET_OWNER_WINDOWS.ps1",
@@ -57,7 +57,7 @@
   },
   {
     "path": "START_WINDOWS.ps1",
-    "sha256": "3374808b94232591d350767b42bb5a0462f42a744c19c5f24513c3ca39f850c0"
+    "sha256": "28a8a700d1d036e0df36ec934bbde37cd723dba666359ba840817674b2394692"
   },
   {
     "path": "VIDEO_UPLOADS.md",
@@ -69,7 +69,7 @@
   },
   {
     "path": "app.py",
-    "sha256": "37742a3b85f03c9029049c298dd92c1b4acc3a5ee4e165c57017b9a3440ae334"
+    "sha256": "9818d26c71c290441793d1512df8bf5069e8753fd1b739997c3c7b52e172cd2f"
   },
   {
     "path": "asset_manifest.json",
@@ -837,7 +837,7 @@
   },
   {
     "path": "templates/_story_preview.html",
-    "sha256": "7494dba76887b4d050a8ac947853cac930ddd116a5361742913d4634b09db615"
+    "sha256": "4eb8f7387cc9c55d1643168567e377ac7412053d45bceeb208d62787c796342e"
   },
   {
     "path": "templates/about.html",
@@ -861,7 +861,7 @@
   },
   {
     "path": "templates/base.html",
-    "sha256": "5c169ff712d69b7e8e59471a099688e68059bb06ce14627a7a6c66c768a77516"
+    "sha256": "3f15b289175948c0ab8ad9e8249e1f081f6f5e7569aa991fac57ba6f025ddd8b"
   },
   {
     "path": "templates/cart.html",
@@ -909,7 +909,7 @@
   },
   {
     "path": "templates/home.html",
-    "sha256": "9081c9cf0b77580864f29bb3399996921c40dc2004ce008c80d7f27a81dea473"
+    "sha256": "34449ae5c51f6f94ad84890d0fc10049cb7b95234a0efb1b787f215f9b4a2aca"
   },
   {
     "path": "templates/login.html",
@@ -1045,7 +1045,7 @@
   },
   {
     "path": "tests/test_performance.py",
-    "sha256": "bffe0eb22f6792e1c6f3f27fedb98a236bc896fe75187741c90cdd1c98a98905"
+    "sha256": "33ec7f8ff27e1b48b00c196168e8a8ddf3d3e32fb207cd2aa7acb85989e86678"
   },
   {
     "path": "tests/test_phone_checkout.py",
@@ -1065,7 +1065,15 @@
   },
   {
     "path": "tests/test_video_media.py",
-    "sha256": "e21cfaa44f20b5be7fb19ef26579ba02b3ea5c2a972c2193b9957bc2f870fac8"
+    "sha256": "d5c2a61feb1a6d957236099d8ced76aaa4099fae71273a3b031ba71af338772e"
+  },
+  {
+    "path": "tools/performance_audit.py",
+    "sha256": "4ce9ade755651fc3990bbc4830ba1350030895789cfe58b38f96aa81df0f766a"
+  },
+  {
+    "path": "tools/performance_baseline.json",
+    "sha256": "379dbbc785829299477f9c6bc1d0ab50320d5d85f5f6fbd797f2fdc6a027f47d"
   },
   {
     "path": "video_processing.py",

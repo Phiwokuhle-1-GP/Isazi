@@ -1,4 +1,4 @@
-## V2.6.35 — Visual reference alignment
+## V2.6.36 — Visual reference alignment
 
 Shared green/cream/yellow treatment across shop, products, cart, checkout, accounts, owner dashboard, contact and editorial pages. Mobile category chips, clearer cart cards, botanical sign-in panel, yellow purchase actions, rounded images. Existing desktop layout, prices, cellphone/PIN registration and payment processing retained.
 
@@ -154,10 +154,10 @@ See PERFORMANCE_NOTES.md for file-size measurements and validation limits. This 
 The story player now loads video metadata without the uploaded poster, removing the large play mark from that poster. The decorative story placeholder play overlay is also removed. Native playback controls remain. Marks baked into video frames cannot be removed by this template change; those require the clean source video.
 
 
-## Local owner workspace update — V2.6.35
+## Local owner workspace update — V2.6.36
 
 Based on GitHub main c5cfb1398b84a1507cd7cc4a0db947e302e6f38a. No deployment performed.
 New grouped sidebar, mobile drawer/bottom navigation, focused orders/products/enquiries views, real/test filters, low-stock filter, 30-day receipts trend and real payment/dispatch attention counts. Other owner forms retain their existing endpoints, CSRF protection and validation.
 Recorded receipts are gross recorded payments, before refunds; not net revenue or a bank reconciliation. KPI counts are all-time; the trend covers the last 30 UTC calendar days. Active products below five real-stock units count as low stock. Dispatch count includes real Paid/Ready orders whose delivery is Not arranged, Booked or Payment confirmed. Test receipts are separate.
-Stop the running local server with Ctrl+C. Extract this ZIP, run APPLY_UPDATE.ps1 with the existing local app folder as -TargetPath, then START_WINDOWS.ps1 in that app folder. Verify /health reports 2.6.35 and hard refresh the browser. The updater backs up code and preserves the database, stock, orders, owner password and uploads. Do not run PUSH_GITHUB_WINDOWS.ps1 for local-only testing.
+Stop the running local server with Ctrl+C. Extract this ZIP, run APPLY_UPDATE.ps1 with the existing local app folder as -TargetPath, then START_WINDOWS.ps1 in that app folder. Verify /health reports 2.6.36 and hard refresh the browser. The updater backs up code and preserves the database, stock, orders, owner password and uploads. Do not run PUSH_GITHUB_WINDOWS.ps1 for local-only testing.
 Validation: 123 automated tests passed, including real/test separation, receipt aggregation, dispatch and low-stock filters, access controls and existing payment workflows. Desktop and 390px mobile Flask-rendered pages inspected in browser; mobile drawer opened/closed. Backend requests verified by Flask test client; Windows PowerShell installer must be run on the user's PC.

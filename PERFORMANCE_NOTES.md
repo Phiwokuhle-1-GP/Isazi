@@ -1,32 +1,47 @@
-# V2.6.6 Mobile and performance verification
+# V2.6.36 performance audit — 31 October 2026
 
-## Delivered changes
+Local changes only; not committed, pushed or deployed.
 
-- Compact mobile header with an accessible expandable menu, search, account and cart controls. Menu supports keyboard Escape and closes after selection; no-JavaScript store links remain available.
-- Phone hero uses the landscape/portraits above readable copy and buttons; the missing space in "your health" is fixed. Category links swipe within their own strip.
-- Larger primary touch controls and 16px form inputs. Checkout reflows into one column; customer orders become labelled cards. Desktop styling remains intact.
-- Responsive WebP images and lazy/asynchronous loading below the hero. Gallery selections clear the original responsive source set so the chosen picture actually appears.
-- The two original hero portraits retain identical decoded pixel data and dimensions through lossless encoding. Their original source files are kept.
-- Fingerprinted static files cache publicly for a year. Personalized HTML remains private/no-store. Gzip is negotiated and respects gzip;q=0. Range responses and original uploads are preserved.
-- Uploaded image thumbnails are bounded to 320/640/1280 widths and cached beside uploads. Large original files are retained and not regenerated on every request.
-- One stylesheet bundle replaces five separate CSS requests. The mobile refinements are included in the bundle. The default script remains deferred.
+## Baseline and measured changes
 
-## Measurements
+| Measure | V2.6.35 | V2.6.36 | Change |
+|---|---:|---:|---:|
+| Homepage default image references | 1,743,162 bytes | 1,286,338 bytes | 26.2% smaller |
+| Homepage eagerly marked image references | 792,422 bytes | 769,704 bytes | 2.9% smaller |
+| Browsing-page JavaScript references | 14,531 bytes | 12,581 bytes | 13.4% smaller; one fewer request |
+| Homepage responsive img elements | 14 | 21 | 7 more adapt to screen size |
 
-Unique default img/src and inline SVG/image href sources in the rendered homepage totalled 6,381,688 bytes before and 1,668,448 bytes after optimization: 73.9% fewer referenced image bytes. This sums file sizes for those default URLs; it is not an actual download trace. Responsive image selection, screen density, lazy loading and existing browser cache can change the files a visitor requests.
+## Changes
 
-The combined stylesheet is 89,876 bytes before compression and 18,571 bytes with the configured gzip compression level. It needs one normal stylesheet request; the source CSS files remain for editing/fallback.
+- Combo and promotional images now provide responsive source sets instead of always defaulting to the largest image. Testimonials have 320/640 pixel choices. Phones and desktop browsers can select a suitable asset using viewport size and pixel density.
+- Story preview poster is lazy loaded, with intrinsic dimensions supplied. Video playback remains click initiated.
+- Header and footer use the existing optimized logo. Custom crests request a bounded image size.
+- Phone checkout JavaScript loads on checkout, customer registration and phone checkout settings pages, rather than every browsing page. Payment-step registration and PEP selection retain their controller.
+- Layout/CSS, original portraits, product data, owner access and payment operations are unchanged.
 
-No Lighthouse score or real-world seconds-to-load claim is made. Actual network latency, Render startup, device CPU and uploaded media affect the result.
+## Method and limits
 
-## Verification
+Repeat with `python tools/performance_audit.py` from an installed development environment. The script creates and removes an isolated temporary database; it does not modify store data. Raw before/after results are in tools/performance_baseline.json.
 
-74 automated checks pass, including the entire registered-customer dry run, owner purchase blocking, saved orders/payment receipts, persistence, cancellation stock pools, owner reports, image upload/streaming handling, gzip negotiation, conditional caching, source-photo pixel equality and thumbnail cache reuse.
+These are local code/payload measurements, not Lighthouse scores or real network transfer counts. Totals deduplicate default img src and SVG image href URLs; they do not model picture sources, srcset choice, CSS images, lazy-loading distance or browser cache. CSS, fonts and video are outside the image totals. Lazy loading defers work; it does not eliminate all eventual downloads. Responsive selection can use larger files on high-density screens.
 
-Browser QA checked 15 pages over 10 phone/tablet/desktop iframe sizes (150 checks) without horizontal document overflow. Pages included Home, Shop, Product, Cart, Checkout, Payment, Receipt, Registration, Customer Login, Account, About, Contact, Health Tips, Tracking and Owner Login. Browser scrollbars reduce the actual content area within an iframe. Mobile menu, Escape, gallery replacement and quantity controls were exercised separately. These checks use exported Flask-rendered HTML; server-side forms and purchases use Flask test clients. Actual phone hardware and a live Render performance audit were not available here.
+HTML grows slightly from the responsive attributes (about 0.1 KB compressed on Home). Warm local response times remain a few milliseconds and are not comparable to live Render latency. No claim is made for improved LCP, INP, CLS or seconds-to-load until the live URL is measured on mobile and desktop. Cold Render starts, uploaded media and real database size are not measured here.
 
-## Build and deployment
+Validation: all 123 pre-existing automated tests passed. The new scoped-script test initially had a test-helper error, corrected before rerunning the performance suite. The five performance tests pass after correction. Original portrait pixel-preservation, gzip/cache, upload range and private-page cache tests remain passing. No new visual browser audit was performed for this patch.
 
-Run optimize_assets.py after changing source images/CSS. START_WINDOWS.ps1, render.yaml and render_start.sh invoke it automatically; unchanged input fingerprints skip rebuilding. asset_manifest.json selects generated files under static/optimized. The source archive keeps originals and only the currently referenced generated assets.
+## Live baseline — 31 October 2026
 
-Deploy the updated code and confirm /health returns 2.6.6. A new asset filename invalidates the old cached version. No database reset is needed. Accounts, uploaded media, real/test stock, stored test orders, payments and owner access are preserved. Keep the persistent Render disk attached. Use DEMO_PAYMENTS_ENABLED=1 for the current dry run; switch to 0 separately when ready. Neither optimization nor that switch configures a live payment provider.
+URL: https://isazi-herbal-shop-client-portal.onrender.com/
+
+Health endpoint reports V2.6.35 and status ok. Home responds HTTP 200 and renders in the remote browser. This verifies baseline deployment, not the local V2.6.36 patch.
+
+- Homepage HTML: 35,496 uncompressed bytes; 6,641–6,642 compressed bytes (about 81% reduction already enabled).
+- CSS: 27,610 compressed bytes; fingerprinted URL with public max-age=31536000, immutable.
+- Desktop hero background: 287,392 WebP bytes; public one-year immutable caching.
+- shop.js: 4,040 compressed bytes; public one-day caching.
+- Personalized HTML: private, no-store.
+- Three independent curl requests: TTFB 7.235, 7.226, 8.355 seconds; connection/TLS completion 7.040, 7.035, 8.169 seconds. Difference approximately 0.195, 0.191, 0.186 seconds. These are remote test-network observations, not isolated server processing or browser rendering times. The large connection overhead makes the raw totals unsuitable as customer load-time estimates.
+
+Google PageSpeed API returned HTTP 429 quota exhausted. The browser inspection API did not expose Performance entries. Consequently mobile/desktop Lighthouse, LCP, CLS, INP and full browser load times are unmeasured. No mobile score is inferred from desktop HTTP requests.
+
+Next comparison requires the same browser/device/network profile after V2.6.36 deployment. Local image-byte savings remain separate from live baseline measurements.

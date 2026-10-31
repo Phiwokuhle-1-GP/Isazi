@@ -1,0 +1,61 @@
+{
+  "method": "Flask test client, temporary seeded database, 25 warm requests per route. Image totals are unique default src/href local file sizes, not browser transfers.",
+  "before_v2_6_35": {
+    "/": {
+      "status": 200,
+      "median_local_ms": 2.79,
+      "html_gzip_bytes": 6640,
+      "default_image_bytes": 1743162,
+      "eager_default_image_bytes": 792422,
+      "script_bytes": 14531,
+      "responsive_img_count": 14
+    },
+    "/shop": {
+      "status": 200,
+      "median_local_ms": 2.24,
+      "html_gzip_bytes": 4192,
+      "default_image_bytes": 368480,
+      "eager_default_image_bytes": 201120,
+      "script_bytes": 14531,
+      "responsive_img_count": 8
+    },
+    "/product/1": {
+      "status": 200,
+      "median_local_ms": 1.65,
+      "html_gzip_bytes": 3560,
+      "default_image_bytes": 112354,
+      "eager_default_image_bytes": 112354,
+      "script_bytes": 14531,
+      "responsive_img_count": 1
+    }
+  },
+  "after_v2_6_36": {
+    "/": {
+      "status": 200,
+      "median_local_ms": 2.68,
+      "html_gzip_bytes": 6746,
+      "default_image_bytes": 1286338,
+      "eager_default_image_bytes": 769704,
+      "script_bytes": 12581,
+      "responsive_img_count": 21
+    },
+    "/shop": {
+      "status": 200,
+      "median_local_ms": 2.34,
+      "html_gzip_bytes": 4186,
+      "default_image_bytes": 366932,
+      "eager_default_image_bytes": 199572,
+      "script_bytes": 12581,
+      "responsive_img_count": 8
+    },
+    "/product/1": {
+      "status": 200,
+      "median_local_ms": 1.64,
+      "html_gzip_bytes": 3554,
+      "default_image_bytes": 110806,
+      "eager_default_image_bytes": 110806,
+      "script_bytes": 12581,
+      "responsive_img_count": 1
+    }
+  }
+}
