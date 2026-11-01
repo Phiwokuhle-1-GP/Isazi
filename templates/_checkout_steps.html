@@ -1,0 +1,5 @@
+<nav class="checkout-steps" aria-label="Checkout progress">
+  <a class="{{ 'is-current' if step==1 }}" href="{{ url_for('journey.choose') }}"><b>1</b> Payment option</a>
+  <span class="{{ 'is-current' if step==2 }}" {% if step==2 %}aria-current="step"{% endif %}><b>2</b> Sign in / Register</span>
+  <span class="{{ 'is-current' if step==3 }}" {% if step==3 %}aria-current="step"{% endif %}><b>3</b> {{ 'PEP store & order' if checkout_method=='pep' else 'Delivery & payment' }}</span>
+</nav>

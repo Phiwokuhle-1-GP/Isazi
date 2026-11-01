@@ -33,7 +33,7 @@ class NormalReleaseTests(unittest.TestCase):
         result=self.post('/checkout',dict(checkout_key=key,name='Normal Customer',email='normal@example.com',phone='0601234567',fulfillment='randburg',address='123 Normal Street, Randburg',consent='on'))
         self.assertIn(b'ORDER RECEIVED',result.data);self.assertIn(b'View Payment Options',result.data)
         self.assertNotIn(b'DEMO ORDER',result.data)
-        self.assertEqual(self.fetch('SELECT total,shipping,status FROM orders'),[(80000,0,'Awaiting confirmation')])
+        self.assertEqual(self.fetch('SELECT total,shipping,status FROM orders'),[(89900,9900,'Awaiting confirmation')])
         self.assertEqual(self.fetch('SELECT stock FROM products WHERE id=1')[0][0],3)
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM payments_received')[0][0],0)
         self.assertIn(b'ISZ-00001',self.client.get('/account').data)
@@ -46,7 +46,7 @@ class NormalReleaseTests(unittest.TestCase):
 
     def test_normal_home_has_latest_shared_visuals_and_owner_media_controls(self):
         page=self.client.get('/').data
-        for item in [b'hero-natural-meadow.webp',b'dr-ntuli-original.png',b'hero-right-photo',b'Listen to testimonials',b'testimonials-title-tile',b'testimonials-grid',b'Free delivery on orders over R600',b'Nationwide delivery',b'footer-socials',b'demo-product-1.webp']:
+        for item in [b'hero-natural-meadow.webp',b'dr-ntuli-original.png',b'hero-right-photo',b'Listen to testimonials',b'testimonials-title-tile',b'testimonials-grid',b'Courier delivery',b'Nationwide delivery',b'footer-socials',b'demo-product-1.webp']:
             self.assertIn(item,page)
         self.assertNotIn(b'CLIENT DEMO',page)
         with self.client.get('/static/css/ecosystem.css') as css:

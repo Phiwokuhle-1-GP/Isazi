@@ -4,6 +4,7 @@ from flask import Blueprint, abort, current_app, flash, redirect, render_templat
 from werkzeug.security import generate_password_hash
 
 METHODS = (
+    ('paystack','Paystack','Payment gateway'),
     ('visa','Visa','Card payment'),
     ('mastercard','Mastercard','Card payment'),
     ('yoco','Yoco','Card checkout'),

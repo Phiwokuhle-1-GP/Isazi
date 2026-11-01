@@ -65,7 +65,7 @@ class PhoneCheckoutTests(unittest.TestCase):
         self.register();response=self.checkout()
         self.assertIn(b'Pending payment confirmation',response.data)
         self.assertNotIn(b'Choose Demo Payment',response.data)
-        self.assertEqual(self.fetch('SELECT shipping,total,status,phone FROM orders')[0],(6000,26000,'Awaiting confirmation','0601234567'))
+        self.assertEqual(self.fetch('SELECT shipping,total,status,phone FROM orders')[0],(5995,25995,'Awaiting confirmation','0601234567'))
         token=self.fetch('SELECT token FROM orders')[0][0]
         self.assertEqual(self.post('/demo/order/'+token+'/payment/visa/complete',follow=False).status_code,409)
         self.owner()
@@ -81,17 +81,18 @@ class PhoneCheckoutTests(unittest.TestCase):
         with patch('simple_checkout.urlopen') as send:
             self.assertEqual(self.post('/owner/sms/1/send',follow=False).status_code,409);send.assert_not_called()
 
-    def test_bad_branch_and_fee_not_configured_fail_without_reserving_stock(self):
+    def test_bad_branch_rejected_and_missing_old_fee_uses_fixed_standard_price(self):
         self.register();self.checkout(branch_code='FAKE')
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)
         with sqlite3.connect(self.db_path) as db:db.execute("DELETE FROM simple_settings WHERE key='pep_fee'")
         self.checkout()
-        self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)
-        self.assertEqual(self.fetch('SELECT presentation_stock FROM products WHERE id=1')[0][0],50)
+        self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],1)
+        self.assertEqual(self.fetch('SELECT shipping FROM orders')[0][0],5995)
+        self.assertEqual(self.fetch('SELECT presentation_stock FROM products WHERE id=1')[0][0],48)
 
-    def test_free_delivery_over_600_and_reference_saved(self):
+    def test_fixed_pep_fee_over_600_and_reference_saved(self):
         self.register();self.post('/cart/add/1',{'quantity':3});self.checkout() # 4 x 200
-        self.assertEqual(self.fetch('SELECT shipping,total FROM orders')[0],(0,80000))
+        self.assertEqual(self.fetch('SELECT shipping,total FROM orders')[0],(5995,85995))
         self.assertEqual(self.fetch('SELECT payment_reference,branch_code FROM pep_orders')[0],('0601234567',self.branch))
 
     def test_qr_registration_keeps_single_product_and_preserves_cart(self):
@@ -99,7 +100,8 @@ class PhoneCheckoutTests(unittest.TestCase):
         self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
         self.assertEqual(self.client.get('/buy/6').location,'/checkout')
         self.assertIn(b'data-payment-choice',self.client.get('/checkout').data)
-        result=self.register();self.assertIn(b'Confirm order',result.data)
+        self.post('/checkout/payment-choice',{'payment_method':'pep'})
+        result=self.register();self.assertIn(b'Choose your PEP store',result.data)
         with self.client.session_transaction() as s:key=s['checkout_key']
         self.post('/checkout',dict(checkout_key=key,name='QR Customer',fulfillment='pep',branch_code=self.branch,consent='on'))
         self.assertEqual(self.fetch('SELECT product_id,quantity FROM order_items'),[(6,1)])
@@ -225,15 +227,18 @@ class PhoneCheckoutTests(unittest.TestCase):
         with self.client.session_transaction() as s:self.assertEqual(s['cart'],{'1':2})
         page=self.client.get('/checkout')
         self.assertEqual(page.status_code,200)
-        self.assertLess(page.data.index(b'data-payment-choice'),page.data.index(b'name="phone"'))
+        self.assertIn(b'data-payment-choice',page.data)
+        self.assertNotIn(b'name="phone"',page.data)
+        self.post('/checkout/payment-choice',{'payment_method':'pep'})
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM customers')[0][0],0)
         failed=self.register(confirm_pin='9999')
         self.assertEqual(failed.status_code,400)
-        self.assertIn(b'data-payment-choice',failed.data)
+        self.assertIn(b'Confirm PIN',failed.data)
+        self.assertNotIn(b'name="branch_code"',failed.data)
         result=self.register()
-        self.assertIn(b'Confirm order',result.data)
+        self.assertIn(b'Choose your PEP store',result.data)
         with self.client.session_transaction() as s:self.assertEqual(s['cart'],{'1':2})
-        self.assertEqual(self.fetch('SELECT preference,branch_code FROM phone_accounts')[0],('pep',self.branch))
+        self.assertEqual(self.fetch('SELECT preference,branch_code FROM phone_accounts')[0],('pep',''))
 
     def test_payment_checkout_blocks_unregistered_order_post(self):
         self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True

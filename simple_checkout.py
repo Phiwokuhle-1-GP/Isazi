@@ -35,6 +35,8 @@ def register_simple(app, db, admin_only, eco):
             db().execute("UPDATE products SET is_bundle=1 WHERE name='Herbal Combo Pack'")
             db().commit()
         db().executescript('''
+        CREATE TABLE IF NOT EXISTS checkout_payment_choice (
+          order_id INTEGER PRIMARY KEY REFERENCES orders(id), method TEXT NOT NULL CHECK(method IN ('card','paystack','ozow','pep')));
         CREATE TABLE IF NOT EXISTS phone_accounts (
           customer_id INTEGER PRIMARY KEY REFERENCES customers(id), phone TEXT NOT NULL UNIQUE,
           pin_hash TEXT NOT NULL, preference TEXT NOT NULL DEFAULT 'pep', branch_code TEXT NOT NULL DEFAULT '',
@@ -56,7 +58,9 @@ def register_simple(app, db, admin_only, eco):
 
     def public_config():
         values=config()
-        return {key:values.get(key,'') for key in ('capitec_holder','capitec_number','capitec_type','capitec_branch','pep_fee')}
+        result={key:values.get(key,'') for key in ('capitec_holder','capitec_number','capitec_type','capitec_branch')}
+        result['pep_fee']='5995'
+        return result
 
     def account(customer=None):
         customer=customer or eco['current_customer']()
@@ -89,20 +93,28 @@ def register_simple(app, db, admin_only, eco):
                     bundle_ids={row[0] for row in db().execute('SELECT id FROM products WHERE active=1 AND is_bundle=1')},qr_base=qr_base(),pep_branches=list(branches.values()),pep_directory_date=directory['updated'],pep_config=public_config())
     app.context_processor(context)
 
+    def auth_page(tab='register',status=400):
+        if session.get('after_auth_checkout') and session.get('checkout_method'):
+            return render_template('checkout_account.html',title='Register or sign in',auth_tab=tab),status
+        page='customer_login.html' if tab=='login' else 'customer_register.html'
+        return render_template(page,title='Sign in' if tab=='login' else 'Create your account'),status
+
     def register_phone(customer_session, destination, throttled, failure):
         key='register:'+(request.remote_addr or 'unknown')
         if throttled(key): abort(429)
         phone=normalize_phone(request.form.get('phone',''));pin=request.form.get('pin','')
-        preference=request.form.get('preference','pep');branch=request.form.get('branch_code','')
+        checkout_auth=bool(session.get('after_auth_checkout') and session.get('checkout_method'))
+        preference=('pep' if session.get('checkout_method')=='pep' else 'gateway') if checkout_auth else request.form.get('preference','pep')
+        branch='' if checkout_auth else request.form.get('branch_code','')
         failure(key)
-        if not phone or not re.fullmatch(r'[0-9]{4}',pin) or pin!=request.form.get('confirm_pin') or not request.form.get('consent') or preference not in ('pep','gateway') or (preference=='pep' and branch not in branches):
-            flash('Enter a South African cellphone number, matching four-digit PINs, your delivery choice and privacy consent. Select a PEP branch for pickup.','error')
-            return render_template('checkout_access.html' if session.get('after_auth_checkout') else 'customer_register.html',title='Payment & delivery' if session.get('after_auth_checkout') else 'Create your account'),400
+        if not phone or not re.fullmatch(r'[0-9]{4}',pin) or pin!=request.form.get('confirm_pin') or not request.form.get('consent') or preference not in ('pep','gateway') or (preference=='pep' and not checkout_auth and branch not in branches):
+            flash('Enter a South African cellphone number, matching four-digit PINs and privacy consent.' if checkout_auth else 'Enter a South African cellphone number, matching four-digit PINs, your delivery choice and privacy consent. Select a PEP branch for pickup.','error')
+            return auth_page()
         # Never silently link an existing account based on an unverified phone number.
         existing=any(normalize_phone(row['phone'])==phone for row in db().execute('SELECT phone FROM customers'))
         if existing:
             flash('Unable to register these details. Sign in to your existing account or contact the team.','error')
-            return render_template('checkout_access.html' if session.get('after_auth_checkout') else 'customer_register.html',title='Payment & delivery' if session.get('after_auth_checkout') else 'Create your account'),400
+            return auth_page()
         try:
             db().execute('BEGIN IMMEDIATE')
             internal=secrets.token_hex(16)+'@phone.invalid'
@@ -112,14 +124,14 @@ def register_simple(app, db, admin_only, eco):
             return redirect(destination())
         except sqlite3.IntegrityError:
             db().rollback();flash('Unable to register these details. Please sign in or contact the team.','error')
-            return render_template('checkout_access.html' if session.get('after_auth_checkout') else 'customer_register.html',title='Payment & delivery' if session.get('after_auth_checkout') else 'Create your account'),400
+            return auth_page()
 
     def login_phone(customer_session, destination, throttled, failure):
         key='phone-login:'+(request.remote_addr or 'unknown');phone=normalize_phone(request.form.get('phone',''))
         row=db().execute('SELECT * FROM phone_accounts WHERE phone=?',(phone,)).fetchone()
         if throttled(key) or (row and row['locked_until']>time.time()):
             flash('Sign-in is temporarily locked. Please try later or contact the team.','error')
-            return render_template('customer_login.html',title='Sign in'),429
+            return auth_page('login',429)
         pin=request.form.get('pin','')
         customer=db().execute('SELECT * FROM customers WHERE id=? AND active=1',(row['customer_id'],)).fetchone() if row else None
         if customer and re.fullmatch(r'[0-9]{4}',pin) and check_password_hash(row['pin_hash'],pin):
@@ -130,7 +142,7 @@ def register_simple(app, db, admin_only, eco):
             db().execute('UPDATE phone_accounts SET failures=?,locked_until=? WHERE customer_id=?',(count,time.time()+(86400 if count>=10 else 900) if count>=5 else 0,row['customer_id']))
             db().commit()
         failure(key);flash('Unable to sign in. Check your cellphone number and PIN.','error')
-        return render_template('customer_login.html',title='Sign in'),400
+        return auth_page('login',400)
 
     @bp.post('/account/pin')
     def change_pin():
@@ -165,10 +177,8 @@ def register_simple(app, db, admin_only, eco):
         return branch
 
     def shipping(total):
-        if total>60000: return 0
-        fee=config().get('pep_fee','')
-        if not fee: raise ValueError('PEP delivery pricing is being confirmed. Please contact the team before ordering R600 or less.')
-        return int(fee)
+        # Fixed standard PEP bag fee, including orders above R600.
+        return 5995
 
     def capture(connection,order_id,branch):
         if not branch: return
@@ -207,13 +217,14 @@ def register_simple(app, db, admin_only, eco):
                 if token:
                     if not re.fullmatch(r'[0-9a-fA-F]{32}',token): raise ValueError('Enter a valid Twilio auth token.')
                     values['sms_token']=token
+                values['pep_fee']='5995'
                 values['sms_enabled']='1' if request.form.get('sms_enabled') else '0'
                 for key,value in values.items(): db().execute('INSERT OR REPLACE INTO simple_settings(key,value) VALUES(?,?)',(key,value))
                 db().execute("INSERT INTO audit_events(actor,event,reference,detail) VALUES('owner','Phone checkout settings','settings','Bank/delivery/SMS settings updated; secrets omitted')")
                 db().commit();flash('Settings saved. No SMS was sent. Bank details are frozen on each new order.','success')
             except ValueError as error:
                 db().rollback();flash(str(error),'error')
-        values=config();values['sms_token_set']=bool(values.pop('sms_token',''))
+        values=config();values['pep_fee']='5995';values['sms_token_set']=bool(values.pop('sms_token',''))
         return render_template('owner_phone_checkout.html',values=values,title='Cellphone checkout & PEP')
 
     @bp.post('/owner/order/<int:order_id>/confirm-eft')

@@ -12,8 +12,20 @@
     "sha256": "3967d0045e2f91727b944ab374ce8bb1d3a0968b35b88bfc5b182017bff3fd4b"
   },
   {
+    "path": "CART_PEP_V2_6_40.md",
+    "sha256": "f1cf72f4d047c5194994c24296ca51fa54a02ef0c9390cf95c732cef72571462"
+  },
+  {
+    "path": "CHECKOUT_V2_6_38.md",
+    "sha256": "a09c8ce34f9084ae08dec234f5eb724ba680c8604adb854fc9ed46d2d52275ee"
+  },
+  {
     "path": "CLIENT_DEMO_GUIDE.md",
     "sha256": "ea0b2fc4ec8c076787fc3da6d4dc75fe82314fea533d96f9783368e58763d9cd"
+  },
+  {
+    "path": "COURIER_V2_6_39.md",
+    "sha256": "a0a95691068bd6fbdb109965885aca14a381b8590fd556e7e1e69dcb3d54975c"
   },
   {
     "path": "CREATE_OWNER.ps1",
@@ -61,7 +73,7 @@
   },
   {
     "path": "START_WINDOWS.ps1",
-    "sha256": "1839bcc74dffface23a56edfd249c144ddcaef5d789e49318819915f644845b2"
+    "sha256": "4b025f6fb7eba925dcec0c092d67466b0ba86fdfea3a6dfbc75f14aed2c6f891"
   },
   {
     "path": "VIDEO_UPLOADS.md",
@@ -73,15 +85,19 @@
   },
   {
     "path": "app.py",
-    "sha256": "f563a0f6671b7a0f7f2b519bb94a3a8e70bc2b44255cea856adaebd1f4b7dcbe"
+    "sha256": "1ba6923182a40c63e200c088ae3a6f120fd2f7e1ca3a8d5d7e017dd08f62fb49"
   },
   {
     "path": "asset_manifest.json",
     "sha256": "ce8e203945ca695d88bffaac411c711d771125b2c656f96d3fcdd955020f9699"
   },
   {
+    "path": "checkout_journey.py",
+    "sha256": "7fe57e0cabc2bc6e135c8a5a1cfc3744804184fd81a794797c28d8f68b3c71c8"
+  },
+  {
     "path": "client_demo.py",
-    "sha256": "945354c74353489799dfb9863132600be64f8053b81a409b5018d540be981505"
+    "sha256": "22661d4d0af253300879cf4346b66b73963d8d95ae58283d51abac47edd0c40c"
   },
   {
     "path": "data/paxi_branches.json",
@@ -89,7 +105,7 @@
   },
   {
     "path": "ecosystem.py",
-    "sha256": "a0180d91c0e190f6a24e31f8a803bccfc56b91881e57a9e78ac0baf3badf1a4c"
+    "sha256": "ba73b2bbfc64fb6845e413ce4530286168deb22c3c7f7cc0c52b4a4eb4cba741"
   },
   {
     "path": "optimize_assets.py",
@@ -117,7 +133,15 @@
   },
   {
     "path": "simple_checkout.py",
-    "sha256": "4e704bd4f920fded30930f99ca1448274af3c1cf8f1e92db96d17126479e8aa3"
+    "sha256": "dfe3a5140a09f13b39285e27fcf4dd4facf9c3452554b34ef8c2f5a0636309b7"
+  },
+  {
+    "path": "static/cart-auto.js",
+    "sha256": "b4c2bad39cf33f48c7bda20791dd5a3e0def3bdd0856d775b690d45e66afe48d"
+  },
+  {
+    "path": "static/css/checkout-journey.css",
+    "sha256": "b58f5f4c293d01cdf1decf9036157cd830df9f3fdfe5ab37895eefd129639ba9"
   },
   {
     "path": "static/css/demo.css",
@@ -797,11 +821,15 @@
   },
   {
     "path": "static/phone-checkout.js",
-    "sha256": "39fa6de7846e596017b365bd05a96e1a278d41324569641b8a01224a2b69624f"
+    "sha256": "eee31ed24a05d015477b1d3ace9d9c9bd7f16093a7a374a5288f647fdb48b870"
   },
   {
     "path": "static/shop.js",
-    "sha256": "cd05ebec54280e7087f9a2a3ee5c4c213ff72290365123c81b16582ace97c03b"
+    "sha256": "5df211ea88bb994bd3904ca0d579d080e31f43102b99813b2d08faf5eea35aa6"
+  },
+  {
+    "path": "templates/_checkout_steps.html",
+    "sha256": "025ec3bf9660d2f89c0d4699a151c40bb8d1f188562dfd44e528961ba7dafcb4"
   },
   {
     "path": "templates/_journey.html",
@@ -813,7 +841,7 @@
   },
   {
     "path": "templates/_payment_methods.html",
-    "sha256": "d18ef7f1cc913c50a56fd9f4a8af1bdf6380e436d6e9b0e2709535b230b6d186"
+    "sha256": "02f13155bbcb04d2216071fa383145283f9a0a20c289057603716caf3b386c4e"
   },
   {
     "path": "templates/_pep_order.html",
@@ -821,7 +849,7 @@
   },
   {
     "path": "templates/_pep_picker.html",
-    "sha256": "59bd867ae39ebbbb45ac66c52577d1c766e8a94a41762a83155e4f6693b187c1"
+    "sha256": "387c66573dcc81cbb107e97e41213d60a132431c4c0834bb4553dbc0c726e9c2"
   },
   {
     "path": "templates/_products.html",
@@ -865,23 +893,31 @@
   },
   {
     "path": "templates/base.html",
-    "sha256": "3f15b289175948c0ab8ad9e8249e1f081f6f5e7569aa991fac57ba6f025ddd8b"
+    "sha256": "52fc6f2e1b2651125551d90220e976048c59348046d6e7b5e19d5fd3285b0999"
   },
   {
     "path": "templates/cart.html",
-    "sha256": "885f85dfb01f70d13783c3d1c7fb23ac4423342c0e45062ec8b6dad09acb85b6"
+    "sha256": "cb0bbccee15a9d42c323078d3f896e1b971492c44a1b52fa5eda25d2bef958ed"
   },
   {
     "path": "templates/checkout.html",
-    "sha256": "4200380bd206248fae0e1c32cc56b6feb7f0de23cc6ea1ce87c17366fcb08c96"
+    "sha256": "1e95000c1688f83e91186c13ba5cac11b0e7ef6c603638910b34e83b641c34ec"
   },
   {
     "path": "templates/checkout_access.html",
     "sha256": "bff364c219fe8fc97c8c3d74fa870e3bea119e3be1f5fa6ea25d3acb4b7aaad6"
   },
   {
+    "path": "templates/checkout_account.html",
+    "sha256": "432eab55ce60c272cab59075838ddae9f33d6904f19d455206201f121abee23a"
+  },
+  {
+    "path": "templates/checkout_payment_choice.html",
+    "sha256": "3c141a604882202a6673a9d87f99210ed63b9d3e324e43ebb664848832211708"
+  },
+  {
     "path": "templates/confirmation.html",
-    "sha256": "561a74e2a0e7704df1647aab573d74ea062356dbb7417c4b090078cd788d734c"
+    "sha256": "d0eb8354b296a84cac400c359c6e9fa879eaf611d2d5763015895f4e76abdf3a"
   },
   {
     "path": "templates/contact.html",
@@ -897,7 +933,7 @@
   },
   {
     "path": "templates/customer_register.html",
-    "sha256": "02eeada693623707812585ff2524b26e0018f7ada88f6a177d2e354fa0553c51"
+    "sha256": "8dc5b903c5118555683bc5f6a16c147d5384737da53221396b0f8812da763b60"
   },
   {
     "path": "templates/demo_account.html",
@@ -953,11 +989,11 @@
   },
   {
     "path": "templates/owner_order.html",
-    "sha256": "62e0b7a256f04288aeadabfc2bde7a938d5ac4ec78b901c556266305bc4db0ca"
+    "sha256": "25016af5dcf4037a5725faf1a545f3cd7151d759edfc59f9787606c224c82123"
   },
   {
     "path": "templates/owner_phone_checkout.html",
-    "sha256": "b034fe5719d83dc5c51cc82942fe04d56d71c363d11f76a0134efab7966ed3de"
+    "sha256": "47de86d704d65f8a08bd366f75604309666625469a81eeaf7e6e5ca2ae4df77e"
   },
   {
     "path": "templates/owner_product.html",
@@ -993,7 +1029,7 @@
   },
   {
     "path": "templates/policies.html",
-    "sha256": "f15481cd08b2c088afaf763e11267cf8fe1c48e50798f94dc9b8fb2e65b885bb"
+    "sha256": "efb0a0821922fbbaaf46cc3e28546eaccf3ded98a25cc27c9ea3b7ef35944594"
   },
   {
     "path": "templates/product.html",
@@ -1016,20 +1052,36 @@
     "sha256": "9581a1414af8bc11f96fe1fecb6559372848a8679088835eb2a6df7171f16f3f"
   },
   {
+    "path": "tests/cart_auto.test.cjs",
+    "sha256": "b60e7d35989f70d637c07775f3b6a10d9def20fe453a8384dea69bf0179d5711"
+  },
+  {
+    "path": "tests/pep_search.test.cjs",
+    "sha256": "a84d6531d0413cd41b66c61b501e6c5537c5bfbfc6d4ccbe96852748963d3632"
+  },
+  {
     "path": "tests/test_audio_testimonials.py",
     "sha256": "87fefc1c8cc57976080e608efe4c6c24fcd22e99f46dbef316a856c0baff1d26"
+  },
+  {
+    "path": "tests/test_cart_auto.py",
+    "sha256": "fa9095c77177d1e8d87ff10760f28f3c6f3d4dc1342c1c9e869f82f2f90ebee5"
   },
   {
     "path": "tests/test_catalog_additions.py",
     "sha256": "df6b78a8841c52fbd00846f8bd8317a7f4733c0f980b21c98ea7c91836bad4d8"
   },
   {
+    "path": "tests/test_checkout_journey.py",
+    "sha256": "39ef01f1aa1aa2c5dcd5f783bae40c27f7f1a73ad4d4f58cd4a762d030cb3b11"
+  },
+  {
     "path": "tests/test_client_demo.py",
-    "sha256": "5d68c9465b4ea7a540efe8b6275168b9ddffeec53f48e093f29c5553d299df25"
+    "sha256": "5eb6e931e3e1ef221bf8382e86f8304e758b5b5a9ed5ed325c8b74cd33fc7bf8"
   },
   {
     "path": "tests/test_ecosystem.py",
-    "sha256": "16d91698eb1686f796343a4684829eeb671fba4802d4640603c2a01d6f191d3c"
+    "sha256": "c7d384fb4dcfdc308078cdf7f4b5141feec6c2a3360efb323082d1c4265e79be"
   },
   {
     "path": "tests/test_home_images.py",
@@ -1037,11 +1089,11 @@
   },
   {
     "path": "tests/test_main_payment_mode.py",
-    "sha256": "f5a29e5c0a48f39e211a393e86315ea920d93027308ad6488a1aa2eba50334ab"
+    "sha256": "a3f82e43443305f08890ef7127e1e57d152f749a0c553e6df9905ffae24cd791"
   },
   {
     "path": "tests/test_normal_release.py",
-    "sha256": "e23028f46c7646f2448eb35dedb249e7c1642b1819c7fa04ae1726c6563c494b"
+    "sha256": "5991d47f35073a89f27e62c3656205153633c78eb9a3d0784ecfe516236514a2"
   },
   {
     "path": "tests/test_owner_workspace.py",
@@ -1057,11 +1109,11 @@
   },
   {
     "path": "tests/test_phone_checkout.py",
-    "sha256": "7b78f4c62deb065c6a0c3203859ac2d729427e0cd40fdea70b5938d68afe5d14"
+    "sha256": "cdec649f0552984d00b0c17d9c5a771bfa07d5bbbcde2f3a2d23384db53657fb"
   },
   {
     "path": "tests/test_store.py",
-    "sha256": "dec43f1729e892c50dace2b9d69463030964a799f99c2518716a637cdf6c1da8"
+    "sha256": "ff62b58d05f1ce93ec5fe0f1ab94913ff64393eaa8adb2db06ee1a3408c5a316"
   },
   {
     "path": "tests/test_story_library.py",
@@ -1069,11 +1121,11 @@
   },
   {
     "path": "tests/test_unified_journey.py",
-    "sha256": "e9f2b1115c946163bbf1a866f1c381e6ef2624489558c4d04a5492e6dfb2c135"
+    "sha256": "e91a3f259ba0a4efe7766ca66aae039cc9320174fc0aabb36c8eb508ac39b4f9"
   },
   {
     "path": "tests/test_video_media.py",
-    "sha256": "03d36a44163c87729b39ec5aac67b95fcb727f111075591190819dffb7975c38"
+    "sha256": "8aabde782ea2bd796eabf3a38e95ee3ebefce90e8e3bac49262b33f95bf5dfe5"
   },
   {
     "path": "tools/performance_audit.py",

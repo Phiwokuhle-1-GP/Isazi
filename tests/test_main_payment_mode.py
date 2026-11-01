@@ -14,7 +14,7 @@ class MainPaymentModeTests(unittest.TestCase):
 
     def setUp(self):
         test_store.StoreTests.setUp(self)
-        self.app=create_app({'TESTING':True,'DATABASE':self.db_path,'UPLOAD_DIR':self.app.config['UPLOAD_DIR'],'DEMO_PAYMENTS_ENABLED':True})
+        self.app=create_app({'TESTING':True,'DATABASE':self.db_path,'UPLOAD_DIR':self.app.config['UPLOAD_DIR'],'DEMO_PAYMENTS_ENABLED':True,'CUSTOMER_CHECKOUT_REQUIRED':False})
         self.client=self.app.test_client();self.client.get('/')
 
     def test_main_store_processes_six_simulations_without_sample_accounts_or_revenue(self):

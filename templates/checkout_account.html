@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block content %}
+<div class="checkout-workspace">{% set step=2 %}{% include '_checkout_steps.html' %}
+<div class="page-heading"><span class="eyebrow light">{{ checkout_method_name }}</span><h1>Continue with your cellphone</h1><p>Save your order and follow its progress.</p></div>
+<section class="panel checkout-auth-panel">
+<nav class="checkout-auth-tabs" aria-label="Account options"><a class="{{ 'selected' if auth_tab!='login' }}" href="{{ url_for('eco.customer_register') }}">New customer</a><a class="{{ 'selected' if auth_tab=='login' }}" href="{{ url_for('eco.customer_login') }}">Sign in</a></nav>
+<form method="post" action="{{ url_for('eco.customer_login' if auth_tab=='login' else 'eco.customer_register') }}" class="form-stack">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Cellphone number<input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" value="{{ request.form.get('phone','') }}" placeholder="e.g. 060 123 4567" required></label>
+<div class="two-col"><label>{{ 'Your 4-digit PIN' if auth_tab=='login' else 'Create a 4-digit PIN' }}<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="{{ 'current-password' if auth_tab=='login' else 'new-password' }}" required></label>
+{% if auth_tab!='login' %}<label>Confirm PIN<input name="confirm_pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label>{% endif %}</div>
+{% if auth_tab!='login' %}<label class="check"><input type="checkbox" name="consent" required {{ 'checked' if request.form.get('consent') }}>I agree to the <a href="{{ url_for('policies') }}">privacy and store information</a> and order updates to my cellphone.</label>{% endif %}
+<button class="button full">{{ 'Sign in and continue' if auth_tab=='login' else 'Continue' }} →</button>
+</form>
+{% if auth_tab=='login' %}<p class="muted">Forgot your PIN? <a href="{{ url_for('contact') }}">Contact the team</a>.</p>{% endif %}
+<p><a href="{{ url_for('journey.choose') }}">← Change payment option</a></p>
+</section></div>{% endblock %}

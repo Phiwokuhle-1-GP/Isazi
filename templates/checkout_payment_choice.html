@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block content %}
+<div class="checkout-workspace">
+{% set step=1 %}{% include '_checkout_steps.html' %}
+<div class="page-heading"><span class="eyebrow light">CHECKOUT</span><h1>Choose how to pay</h1><p>Select a payment option to continue.</p></div>
+<div class="checkout-layout">
+<form method="post" action="{{ url_for('journey.choose') }}" class="panel checkout-choice-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<fieldset><legend>Payment options</legend><div class="checkout-choices" data-payment-choice>
+{% for choice in checkout_choices %}
+<label class="checkout-choice {{ 'is-unavailable' if not choice.available }}">
+<input type="radio" name="payment_method" value="{{ choice.key }}" required {{ 'checked' if checkout_method==choice.key }} {{ 'disabled' if not choice.available }}>
+<span class="checkout-choice-icon" aria-hidden="true">{{ choice.icon }}</span>
+<span><strong>{{ choice.name }}</strong><small>{{ choice.description }}</small>{% if not choice.available %}<small class="connection-note">Not connected yet</small>{% endif %}</span>
+</label>{% endfor %}</div></fieldset>
+{% if demo_payments_enabled %}<p class="checkout-test-note">Payment test mode · no real charge or transfer.</p>{% endif %}
+<div class="checkout-actions"><a href="{{ url_for('cart') }}">← Back to cart</a><button class="button">Continue →</button></div>
+</form>
+<aside class="panel checkout-order-summary"><h2>Your order</h2>{% if lines %}{% for line in lines %}<div class="checkout-order-item"><img src="{{ image_url(line.product.image,320) }}" width="80" height="64" alt="" loading="lazy"><div><b>{{ line.product.name }}</b><small>Quantity: {{ line.quantity }}</small><strong>{{ line.total|money }}</strong></div></div>{% endfor %}{% else %}{% include '_quick_product.html' %}<p>Your cart is saved while you choose.</p><a href="{{ url_for('cart') }}">View your cart →</a>{% endif %}<p class="muted">Delivery details and the final total are confirmed before payment.</p><div class="notice">Need help? <a href="tel:{{ settings.phone|replace(' ','') }}">{{ settings.phone }}</a></div></aside>
+</div></div>{% endblock %}

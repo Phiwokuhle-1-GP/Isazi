@@ -23,7 +23,7 @@ from client_demo import register_client_demo
 from video_processing import transcode_upload, extract_testimonial_audio
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.37'
+APP_VERSION = '2.6.40'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -88,7 +88,7 @@ DEFAULTS = {
  'phone': '060 585 7817', 'location': 'Randburg, Johannesburg',
  'about': 'Discover Isazi Herbal Shop and our range of traditional herbal products. Contact our team for product information, ingredients and directions before purchasing.',
  'story_video': '', 'payment_instructions': 'Your order is reserved for review. Our team will contact you to confirm availability, delivery and payment details. No online payment has been taken.',
- 'delivery_note': 'Free local delivery in Randburg on orders over R600. A R50 local delivery fee applies to orders of R600 or less. Collection is free; the collection address is confirmed by our team.',
+ 'delivery_note': 'Courier delivery is a fixed R99 per order. Collection is free; the collection address is confirmed by our team. PEP pickup fees are shown separately at checkout.',
  'policy': 'Contact us promptly about an incorrect, damaged or unwanted order. Returns and refunds are handled in accordance with applicable consumer rights. Keep your order reference and proof of purchase.',
 }
 
@@ -231,7 +231,7 @@ def create_app(test_config=None):
 
     @app.before_request
     def purchasing_role():
-        purchase_endpoints={'cart_add','cart_update','cart_remove','checkout','quick_buy','demo.complete','eco.pay'}
+        purchase_endpoints={'cart_add','cart_update','cart_remove','checkout','quick_buy','demo.complete','eco.pay','journey.choose'}
         if session.get('admin') and request.endpoint in purchase_endpoints:
             abort(403,'Owners cannot purchase. Sign out and use a customer account, or open a separate browser profile.')
 
@@ -370,9 +370,17 @@ def create_app(test_config=None):
             return redirect(url_for('shop'))
         if app.config.get('DEMO_MODE'):
             demo['ensure_customer']()
-        if app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not eco['current_customer']() and not app.config.get('DEMO_MODE'):
-            session['after_auth_checkout'] = True
-            return render_template('checkout_access.html', title='Payment & delivery')
+        flow = session.get('checkout_method') in ('card','paystack','ozow','pep')
+        if app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not app.config.get('DEMO_MODE'):
+            if not flow:
+                return render_template('checkout_payment_choice.html', title='Choose how to pay', lines=lines)
+            if not journey['available'](session['checkout_method']):
+                session.pop('checkout_method',None)
+                flash('This payment option is not currently connected. Please choose another option.','error')
+                return redirect(url_for('checkout'))
+            if not eco['current_customer']():
+                session['after_auth_checkout'] = True
+                return render_template('checkout_account.html', title='Register or sign in', auth_tab='register')
         session.setdefault('checkout_key', secrets.token_hex(24))
         subtotal = sum(x['total'] for x in lines)
         if request.method == 'POST':
@@ -385,6 +393,11 @@ def create_app(test_config=None):
             fields = {k: request.form.get(k, '').strip() for k in ['name', 'email', 'phone', 'fulfillment', 'address', 'notes']}
             errors = []
             pep_branch = None
+            method = session.get('checkout_method') if flow else None
+            if method == 'pep':
+                fields['fulfillment'] = 'pep'
+            elif method and fields['fulfillment'] == 'pep':
+                errors.append('Select PEP on the payment options page to use PEP pickup.')
             try:
                 pep_branch = simple['validate_checkout'](fields,subtotal)
             except ValueError as error:
@@ -398,10 +411,10 @@ def create_app(test_config=None):
                 errors.append('Enter a valid email address.')
             if not re.fullmatch(r'[+\d ()-]{7,25}', fields['phone']):
                 errors.append('Enter a valid contact number.')
-            if fields['fulfillment'] not in ['collection', 'randburg', 'pep']:
-                errors.append('Choose PEP pickup, collection or delivery.')
-            if fields['fulfillment'] == 'randburg' and not 10 <= len(fields['address']) <= 600:
-                errors.append('Enter a full Randburg delivery address.')
+            if fields['fulfillment'] not in ['collection', 'courier', 'randburg', 'pep']:
+                errors.append('Choose PEP pickup, collection or courier delivery.')
+            if fields['fulfillment'] in ('courier','randburg') and not 10 <= len(fields['address']) <= 600:
+                errors.append('Enter your full courier delivery address, including town and postal code.')
             if len(fields['notes']) > 1000 or len(fields['address']) > 600:
                 errors.append('Please shorten your address or order notes.')
             if not request.form.get('consent'):
@@ -427,7 +440,7 @@ def create_app(test_config=None):
                         subtotal += line['total']
                     applied_coupon=eco['coupon_for_checkout'](connection,subtotal)
                     discount=applied_coupon['discount']
-                    shipping = simple['shipping'](subtotal-discount) if fields['fulfillment']=='pep' else (0 if fields['fulfillment'] == 'collection' or subtotal-discount > 60000 else 5000)
+                    shipping = simple['shipping'](subtotal-discount) if fields['fulfillment']=='pep' else (0 if fields['fulfillment'] == 'collection' else 9900)
                     token = secrets.token_urlsafe(32)
                     order_id = connection.execute('INSERT INTO orders(token,checkout_key,name,email,phone,fulfillment,address,notes,subtotal,shipping,total) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
                         (token, key, fields['name'], fields['email'], fields['phone'], fields['fulfillment'], fields['address'], fields['notes'], subtotal, shipping, subtotal-discount + shipping)).lastrowid
@@ -436,6 +449,8 @@ def create_app(test_config=None):
                         connection.execute('INSERT INTO order_items(order_id,product_id,name,quantity,unit_price) VALUES(?,?,?,?,?)', (order_id, p['id'], p['name'], line['quantity'], p['price']))
                     eco['capture_order'](connection,order_id,request.form,applied_coupon)
                     simple['capture'](connection,order_id,pep_branch)
+                    if method:
+                        connection.execute('INSERT INTO checkout_payment_choice(order_id,method) VALUES(?,?)',(order_id,method))
                     connection.commit()
                     if not quick_product:
                         session['cart'] = {}
@@ -443,6 +458,10 @@ def create_app(test_config=None):
                     session.pop('coupon',None)
                     session.pop('checkout_key', None)
                     session['recent_order'] = token
+                    session.pop('checkout_method',None)
+                    session.pop('after_auth_checkout',None)
+                    if method and method != 'pep' and (app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED')):
+                        return redirect(url_for('demo.payment_preview',token=token,method='visa' if method=='card' else method))
                     return redirect(url_for('demo.payment_select',token=token) if fields['fulfillment']!='pep' and (app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED')) else url_for('confirmation', token=token))
                 except ValueError as error:
                     connection.rollback()
@@ -966,8 +985,10 @@ def create_app(test_config=None):
             db().execute("UPDATE videos SET title=? WHERE id=? AND kind='testimonial' AND title=?", (label,n+1,f'Customer testimony {n}'))
         for key, value in DEFAULTS.items():
             db().execute('INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)', (key, value))
-        # Apply the requested delivery threshold without resetting other store text.
-        db().execute("UPDATE settings SET value=replace(value,'R300','R600') WHERE key='delivery_note'")
+        # One-time delivery text update; historical order charges remain unchanged.
+        if not db().execute("SELECT 1 FROM settings WHERE key='courier_flat_fee_2639'").fetchone():
+            db().execute("UPDATE settings SET value=? WHERE key='delivery_note'",(DEFAULTS['delivery_note'],))
+            db().execute("INSERT INTO settings(key,value) VALUES('courier_flat_fee_2639','1')")
         if not db().execute('SELECT 1 FROM products LIMIT 1').fetchone():
             for name, category, price, image_name in SEEDS:
                 db().execute('INSERT INTO products(name,category,price,description,image,stock) VALUES(?,?,?,?,?,?)',
@@ -983,6 +1004,8 @@ def create_app(test_config=None):
 
     eco=register_ecosystem(app,db,admin_only)
     simple=register_simple(app,db,admin_only,eco)
+    from checkout_journey import register_checkout_journey
+    journey=register_checkout_journey(app,db,eco)
     demo=register_client_demo(app,db,eco)
     with app.app_context():
         initialize()

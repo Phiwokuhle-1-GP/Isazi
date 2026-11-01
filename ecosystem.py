@@ -267,7 +267,7 @@ def register_ecosystem(app, db, admin_only):
         return wrapped
 
     def customer_session(customer):
-        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product','quick_product','after_auth_quick','after_auth_checkout') if key in session}
+        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product','quick_product','after_auth_quick','after_auth_checkout','checkout_method') if key in session}
         session.clear();session.update(retained)
         session['customer_id']=customer['id'];session['customer_version']=customer['auth_version'];session.permanent=True
 
@@ -301,6 +301,8 @@ def register_ecosystem(app, db, admin_only):
                     return redirect(customer_destination())
                 except sqlite3.IntegrityError:
                     db().rollback();failure(key);flash('Unable to create an account with those details. Try signing in or contact the team.','error')
+        if session.get('after_auth_checkout') and session.get('checkout_method'):
+            return render_template('checkout_account.html',title='Register or sign in',auth_tab='register')
         return render_template('customer_register.html',title='Create your account')
 
     @bp.route('/account/login',methods=['GET','POST'])
@@ -311,12 +313,16 @@ def register_ecosystem(app, db, admin_only):
             key='customer:'+(request.remote_addr or 'unknown')
             if throttled(key):
                 flash('Too many attempts. Please wait 15 minutes.','error')
+                if session.get('after_auth_checkout') and session.get('checkout_method'):
+                    return render_template('checkout_account.html',title='Register or sign in',auth_tab='login'),429
                 return render_template('customer_login.html',title='Customer sign in'),429
             customer=db().execute('SELECT * FROM customers WHERE email=? COLLATE NOCASE AND active=1',(request.form.get('email','').strip(),)).fetchone()
             if customer and check_password_hash(customer['password_hash'],request.form.get('password','')):
                 db().execute('DELETE FROM login_attempts WHERE ip=?',(key,));db().commit();customer_session(customer)
                 return redirect(customer_destination())
             failure(key);flash('Unable to sign in. Check your email and password.','error')
+        if session.get('after_auth_checkout') and session.get('checkout_method'):
+            return render_template('checkout_account.html',title='Register or sign in',auth_tab='login')
         return render_template('customer_login.html',title='Customer sign in')
 
     @bp.post('/account/logout')
@@ -941,4 +947,4 @@ def register_ecosystem(app, db, admin_only):
         return db().execute('SELECT * FROM customer_addresses WHERE customer_id=? ORDER BY id DESC',(customer['id'],)).fetchall() if customer else []
 
     app.register_blueprint(bp)
-    return dict(initialize=initialize,capture_order=capture_order,order_changed=order_changed,resolve_agent=resolve_agent,current_referral=current_referral,order_context=order_context,cart_promotion=cart_promotion,coupon_for_checkout=coupon_for_checkout,product_context=product_context,current_customer=current_customer,checkout_addresses=checkout_addresses)
+    return dict(payfast_config=payfast_config,initialize=initialize,capture_order=capture_order,order_changed=order_changed,resolve_agent=resolve_agent,current_referral=current_referral,order_context=order_context,cart_promotion=cart_promotion,coupon_for_checkout=coupon_for_checkout,product_context=product_context,current_customer=current_customer,checkout_addresses=checkout_addresses)

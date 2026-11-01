@@ -1,1 +1,11 @@
-<div class="payment-method-grid">{% for key,name,description in payment_methods %}<a class="payment-method payment-{{ key }}" href="{{ url_for('demo.payment_preview',token=order.token,method=key) if demo_payments_enabled and order else url_for('demo.provider_preview',method=key) }}"><strong>{{ name }}</strong><small>{{ description }}</small><span>{{ 'Choose →' if demo_payments_enabled and order else 'Preview →' }}</span></a>{% endfor %}</div>
+{% if not order %}
+<div class="payment-method-grid cart-payment-options">
+{% for choice in checkout_choices %}
+<form method="post" action="{{ url_for('journey.choose') }}" class="cart-payment-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="payment_method" value="{{ choice.key }}">
+<button type="submit" class="payment-method payment-{{ choice.key }}" {{ 'disabled' if not choice.available }}><strong>{{ choice.name }}</strong><small>{{ choice.description }}</small><span>{{ 'Choose →' if choice.available else 'Not connected yet' }}</span></button>
+</form>{% endfor %}
+</div>
+{% else %}
+<div class="payment-method-grid">{% for key,name,description in payment_methods if key in ('visa','paystack','ozow') %}<a class="payment-method payment-{{ key }}" href="{{ url_for('demo.payment_preview',token=order.token,method=key) if demo_payments_enabled else url_for('journey.choose') }}"><strong>{{ 'Pay by card' if key=='visa' else name }}</strong><small>{{ description }}</small><span>Choose →</span></a>{% endfor %}</div>
+{% endif %}

@@ -137,7 +137,7 @@ class EcosystemTests(unittest.TestCase):
         self.post('/cart/add/2');self.post('/cart/coupon',{'code':'SAVE20'})
         response=self.submit_cart(fulfillment='randburg',address='123 Example Street, Randburg')
         self.assertIn(b'ORDER RECEIVED',response.data)
-        self.assertEqual(self.fetch('SELECT subtotal,shipping,total FROM orders')[0],(35000,5000,33000))
+        self.assertEqual(self.fetch('SELECT subtotal,shipping,total FROM orders')[0],(35000,9900,37900))
         self.assertEqual(self.fetch('SELECT discount FROM order_extra')[0][0],7000)
         self.post('/cart/add/2')
         with self.client.session_transaction() as session:

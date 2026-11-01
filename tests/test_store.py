@@ -43,6 +43,8 @@ class StoreTests(unittest.TestCase):
         with self.client.session_transaction() as s:owner_signed_in=bool(s.get('admin'))
         if owner_signed_in:self.post('/owner/logout')
         self.post(f'/cart/add/{product_id}', {'quantity': str(quantity)})
+        if self.app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not self.app.config.get('DEMO_MODE'):
+            self.post('/checkout/payment-choice', {'payment_method':'card'})
         self.client.get('/checkout')
         with self.client.session_transaction() as session:
             key = session['checkout_key']
@@ -67,7 +69,7 @@ class StoreTests(unittest.TestCase):
             self.post('/owner/settings',dict(values,social_facebook=bad))
             self.assertEqual(self.fetch("SELECT value FROM settings WHERE key='social_facebook'")[0][0],values['social_facebook'])
         self.assertIn('Nationwide delivery',self.client.get('/').get_data(as_text=True))
-        self.assertIn('courier cost',self.client.get('/policies').get_data(as_text=True))
+        self.assertIn('fixed R99',self.client.get('/policies').get_data(as_text=True))
 
     def test_owner_reset_replaces_password_and_preserves_products(self):
         self.owner()
@@ -132,15 +134,15 @@ class StoreTests(unittest.TestCase):
         self.assertIn('noindex', response.headers['X-Robots-Tag'])
         self.assertEqual(self.client.get('/order/1').status_code,404)
 
-    def test_delivery_fee_and_free_delivery(self):
+    def test_courier_fixed_fee_at_all_order_values(self):
         self.order(fulfillment='randburg',address='123 Test Street, Randburg')
-        self.assertEqual(self.fetch('SELECT shipping,total FROM orders'),[(5000,25000)])
+        self.assertEqual(self.fetch('SELECT shipping,total FROM orders'),[(9900,29900)])
         self.order(quantity=4,fulfillment='randburg',address='123 Test Street, Randburg')
-        self.assertEqual(self.fetch('SELECT shipping,total FROM orders ORDER BY id DESC')[0],(0,80000))
+        self.assertEqual(self.fetch('SELECT shipping,total FROM orders ORDER BY id DESC')[0],(9900,89900))
 
     def test_delivery_at_exact_threshold_is_not_free(self):
         self.order(product_id=5,quantity=6,fulfillment='randburg',address='123 Test Street, Randburg')
-        self.assertEqual(self.fetch('SELECT shipping,total FROM orders'),[(5000,65000)])
+        self.assertEqual(self.fetch('SELECT shipping,total FROM orders'),[(9900,69900)])
 
     def test_checkout_validation_and_changed_stock(self):
         response = self.order(email='invalid')

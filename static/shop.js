@@ -9,15 +9,15 @@ if (checkout) {
     const zar = cents => new Intl.NumberFormat('en-ZA', {style: 'currency', currency: 'ZAR'}).format(cents / 100);
     if(fulfillment.value==='pep'){
       const fee=checkout.dataset.pepFee;
-      const shipping=subtotal>60000 ? 0 : fee!=='' ? Number(fee) : null;
+      const shipping=5995;
       document.querySelector('#shipping-total').textContent=shipping===null?'Contact us for pricing':zar(shipping);
       document.querySelector('#order-total').textContent=shipping===null?zar(subtotal)+' + delivery':zar(subtotal+shipping);
-      address.required=false;return;
+      if(address) address.required=false;return;
     }
-    const shipping = fulfillment.value === 'randburg' && subtotal <= 60000 ? 5000 : 0;
+    const shipping = ['courier','randburg'].includes(fulfillment.value) ? 9900 : 0;
     document.querySelector('#shipping-total').textContent = zar(shipping);
     document.querySelector('#order-total').textContent = zar(subtotal + shipping);
-    address.required = fulfillment.value === 'randburg';
+    if(address) address.required = ['courier','randburg'].includes(fulfillment.value);
   };
   fulfillment.addEventListener('change', updateTotals);
   updateTotals();
@@ -87,7 +87,7 @@ document.querySelectorAll('[data-tabs]').forEach(group => {
 });
 const savedAddress = document.querySelector('#saved-address');
 if (savedAddress) savedAddress.addEventListener('change', () => {
-  if (savedAddress.value) {document.querySelector('#address').value=savedAddress.value; document.querySelector('#fulfillment').value='randburg'; document.querySelector('#fulfillment').dispatchEvent(new Event('change'));}
+  if (savedAddress.value) {document.querySelector('#address').value=savedAddress.value; document.querySelector('#fulfillment').value='courier'; document.querySelector('#fulfillment').dispatchEvent(new Event('change'));}
 });
 if (window.matchMedia('(max-width:640px)').matches) document.querySelectorAll('.category-nav').forEach(menu => menu.removeAttribute('open'));
 
