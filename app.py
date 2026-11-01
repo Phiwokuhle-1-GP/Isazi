@@ -373,7 +373,12 @@ def create_app(test_config=None):
         flow = session.get('checkout_method') in ('card','paystack','ozow','pep')
         if app.config.get('CUSTOMER_CHECKOUT_REQUIRED') and not app.config.get('DEMO_MODE'):
             if not flow:
-                return render_template('checkout_payment_choice.html', title='Choose how to pay', lines=lines)
+                if quick_product:
+                    cart = dict(session.get('cart', {}))
+                    cart.setdefault(str(quick_product), 1)
+                    session['cart'] = cart
+                    session.pop('quick_product', None)
+                return redirect(url_for('cart', _anchor='cart-payment-options'))
             if not journey['available'](session['checkout_method']):
                 session.pop('checkout_method',None)
                 flash('This payment option is not currently connected. Please choose another option.','error')

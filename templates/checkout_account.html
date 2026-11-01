@@ -12,5 +12,5 @@
 <button class="button full">{{ 'Sign in and continue' if auth_tab=='login' else 'Continue' }} →</button>
 </form>
 {% if auth_tab=='login' %}<p class="muted">Forgot your PIN? <a href="{{ url_for('contact') }}">Contact the team</a>.</p>{% endif %}
-<p><a href="{{ url_for('journey.choose') }}">← Change payment option</a></p>
+<p><a href="{{ url_for('cart', _anchor='cart-payment-options') }}">← Change payment option</a></p>
 </section></div>{% endblock %}

@@ -29,7 +29,7 @@ class UnifiedJourneyTests(unittest.TestCase):
         self.assertEqual(self.fetch('SELECT stock,presentation_stock FROM products WHERE id=1'),[(0,50)])
         result=self.post('/cart/add/1',follow=False)
         self.assertNotEqual(result.location,'/account/register')
-        self.assertIn(b'Choose how to pay',self.client.get('/checkout').data)
+        self.assertIn(b'Choose payment option',self.client.get('/checkout',follow_redirects=True).data)
         self.post('/checkout/payment-choice',{'payment_method':'card'})
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)
         registered=self.register()
@@ -79,8 +79,8 @@ class UnifiedJourneyTests(unittest.TestCase):
 
     def test_checkout_requires_account_and_live_mode_uses_real_stock(self):
         with self.client.session_transaction() as session:session['cart']={'1':1}
-        self.assertEqual(self.client.get('/checkout').status_code,200)
-        self.assertIn(b'data-payment-choice',self.client.get('/checkout').data)
+        self.assertEqual(self.client.get('/checkout').location,'/cart#cart-payment-options')
+        self.assertIn(b'cart-payment-form',self.client.get('/checkout',follow_redirects=True).data)
         self.app.config['DEMO_PAYMENTS_ENABLED']=False
         self.assertNotIn(b'Add to Cart',self.client.get('/product/1').data)
         self.assertEqual(self.fetch('SELECT stock,presentation_stock FROM products WHERE id=1'),[(0,50)])

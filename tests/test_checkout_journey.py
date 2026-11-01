@@ -39,7 +39,7 @@ class CheckoutJourneyTests(unittest.TestCase):
         return self.post('/checkout', data, follow=False)
 
     def test_choice_before_auth_then_branch_after_auth(self):
-        choice = self.client.get('/checkout').data
+        choice = self.client.get('/checkout',follow_redirects=True).data
         for method in (b'card', b'paystack', b'ozow', b'pep'):
             self.assertIn(b'value="'+method+b'"', choice)
         self.assertNotIn(b'name="phone"', choice)
@@ -114,7 +114,7 @@ class CheckoutJourneyTests(unittest.TestCase):
         self.assertNotIn(b'name="pin"',response.data)
         self.post('/checkout/payment-choice',{'payment_method':'paystack'})
         self.app.config['DEMO_PAYMENTS_ENABLED']=False
-        self.assertIn(b'Choose how to pay',self.client.get('/checkout',follow_redirects=True).data)
+        self.assertIn(b'Choose payment option',self.client.get('/checkout',follow_redirects=True).data)
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)
 
     def test_failed_signin_preserves_choice_and_uses_checkout_account_page(self):
@@ -192,3 +192,30 @@ class CheckoutJourneyTests(unittest.TestCase):
         response=self.order(branch_code=self.branch)
         self.assertEqual(response.status_code,302)
         self.assertEqual(self.fetch('SELECT shipping,total FROM orders')[0],(5995,25995))
+
+    def test_duplicate_selection_page_redirects_to_cart_without_changing_choice(self):
+        with self.client.session_transaction() as session:
+            session['checkout_method']='pep'
+        response=self.client.get('/checkout/payment-choice')
+        self.assertEqual(response.status_code,302)
+        self.assertEqual(response.location,'/cart#cart-payment-options')
+        with self.client.session_transaction() as session:
+            self.assertEqual(session['checkout_method'],'pep')
+        page=self.client.get(response.location).data
+        self.assertIn(b'Choose payment option',page)
+        self.assertNotIn(b'Choose how to pay',page)
+
+    def test_checkout_without_choice_returns_to_cart(self):
+        response=self.client.get('/checkout')
+        self.assertEqual(response.location,'/cart#cart-payment-options')
+        self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)
+
+    def test_quick_purchase_without_choice_remains_available_in_cart(self):
+        with self.client.session_transaction() as session:
+            session['quick_product']=6
+            session.pop('checkout_method',None)
+        response=self.client.get('/checkout/payment-choice',follow_redirects=True)
+        self.assertIn(b'Choose payment option',response.data)
+        with self.client.session_transaction() as session:
+            self.assertEqual(session['cart']['6'],1)
+            self.assertNotIn('quick_product',session)

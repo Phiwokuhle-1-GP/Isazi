@@ -1,7 +1,7 @@
 {% extends 'base.html' %}{% block content %}
 <div class="checkout-workspace">
 {% if checkout_method %}{% set step=3 %}{% include '_checkout_steps.html' %}{% else %}{% include '_quick_product.html' %}{% set journey_step='checkout' %}{% include '_journey.html' %}{% endif %}
-<div class="page-heading"><span class="eyebrow light">{{ checkout_method_name or 'CHECKOUT' }}</span><h1>{{ 'Choose your PEP store' if checkout_method=='pep' else 'Delivery & order details' }}</h1><p>{{ 'Choose where to collect your parcel, then review your order.' if checkout_method=='pep' else 'Confirm delivery and the final total before payment.' }}</p>{% if checkout_method %}<a href="{{ url_for('journey.choose') }}">← Change payment option</a>{% endif %}</div>
+<div class="page-heading"><span class="eyebrow light">{{ checkout_method_name or 'CHECKOUT' }}</span><h1>{{ 'Choose your PEP store' if checkout_method=='pep' else 'Delivery & order details' }}</h1><p>{{ 'Choose where to collect your parcel, then review your order.' if checkout_method=='pep' else 'Confirm delivery and the final total before payment.' }}</p>{% if checkout_method %}<a href="{{ url_for('cart', _anchor='cart-payment-options') }}">← Change payment option</a>{% endif %}</div>
 <form method="post" class="checkout-layout" id="checkout-form" data-subtotal="{{ subtotal-discount }}" data-pep-fee="{{ pep_config.pep_fee }}">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="checkout_key" value="{{ session.checkout_key }}">
 <div class="panel form-stack">

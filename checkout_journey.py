@@ -1,5 +1,5 @@
 """Payment choice precedes authentication; provider readiness is server enforced."""
-from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, flash, redirect, request, session, url_for
 
 CHOICES = (
     ('card', 'Pay by card', 'Debit or credit card', '▣'),
@@ -33,12 +33,15 @@ def register_checkout_journey(app, db, eco):
 
     @bp.route('/checkout/payment-choice', methods=['GET', 'POST'])
     def choose():
+        if request.method == 'GET':
+            # The cart is the only payment-selection screen. Keep POST for
+            # validated, CSRF-protected selection from its payment cards.
+            if session.get('quick_product'):
+                return redirect(url_for('checkout'))
+            return redirect(url_for('cart', _anchor='cart-payment-options'))
         if not session.get('cart') and not session.get('quick_product'):
             flash('Add a product before checking out.', 'error')
             return redirect(url_for('shop'))
-        if request.method == 'GET':
-            # A GET renders options and never changes the selected route or cart.
-            return render_template('checkout_payment_choice.html', title='Choose how to pay', lines=[])
         method = request.form.get('payment_method', '')
         if not any(r[0] == method for r in CHOICES):
             abort(400, 'Choose a listed payment option.')

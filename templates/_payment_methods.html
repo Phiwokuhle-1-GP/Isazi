@@ -7,5 +7,5 @@
 </form>{% endfor %}
 </div>
 {% else %}
-<div class="payment-method-grid">{% for key,name,description in payment_methods if key in ('visa','paystack','ozow') %}<a class="payment-method payment-{{ key }}" href="{{ url_for('demo.payment_preview',token=order.token,method=key) if demo_payments_enabled else url_for('journey.choose') }}"><strong>{{ 'Pay by card' if key=='visa' else name }}</strong><small>{{ description }}</small><span>Choose →</span></a>{% endfor %}</div>
+<div class="payment-method-grid">{% for key,name,description in payment_methods if key in ('visa','paystack','ozow') %}<a class="payment-method payment-{{ key }}" href="{{ url_for('demo.payment_preview',token=order.token,method=key) if demo_payments_enabled else url_for('cart', _anchor='cart-payment-options') }}"><strong>{{ 'Pay by card' if key=='visa' else name }}</strong><small>{{ description }}</small><span>Choose →</span></a>{% endfor %}</div>
 {% endif %}

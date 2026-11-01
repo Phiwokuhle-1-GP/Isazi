@@ -85,7 +85,7 @@
   },
   {
     "path": "app.py",
-    "sha256": "1ba6923182a40c63e200c088ae3a6f120fd2f7e1ca3a8d5d7e017dd08f62fb49"
+    "sha256": "40026a702c9aed10727d2cfa33f37b1145aff035848de855d06c754608f6aa4f"
   },
   {
     "path": "asset_manifest.json",
@@ -93,7 +93,7 @@
   },
   {
     "path": "checkout_journey.py",
-    "sha256": "7fe57e0cabc2bc6e135c8a5a1cfc3744804184fd81a794797c28d8f68b3c71c8"
+    "sha256": "bd829a118fbc469317e2cd3a5a671360bed4be564dab68dbbf51597165736856"
   },
   {
     "path": "client_demo.py",
@@ -829,7 +829,7 @@
   },
   {
     "path": "templates/_checkout_steps.html",
-    "sha256": "025ec3bf9660d2f89c0d4699a151c40bb8d1f188562dfd44e528961ba7dafcb4"
+    "sha256": "243296ea0abebe213a4effe550cd3e304a1d1372f6a71ddea29c9ed842c34db2"
   },
   {
     "path": "templates/_journey.html",
@@ -841,7 +841,7 @@
   },
   {
     "path": "templates/_payment_methods.html",
-    "sha256": "02f13155bbcb04d2216071fa383145283f9a0a20c289057603716caf3b386c4e"
+    "sha256": "0c49701b432b527577f1198c363adf124ae379bccac49fc339b3b65e019e2f70"
   },
   {
     "path": "templates/_pep_order.html",
@@ -901,7 +901,7 @@
   },
   {
     "path": "templates/checkout.html",
-    "sha256": "1e95000c1688f83e91186c13ba5cac11b0e7ef6c603638910b34e83b641c34ec"
+    "sha256": "7d8a830f4e07893927246d0a0becac4af06c1c546a4b0d0b7e4cb5187ebb6015"
   },
   {
     "path": "templates/checkout_access.html",
@@ -909,7 +909,7 @@
   },
   {
     "path": "templates/checkout_account.html",
-    "sha256": "432eab55ce60c272cab59075838ddae9f33d6904f19d455206201f121abee23a"
+    "sha256": "4d50c4f062004306fe20917368e01e2e0ababd3d1853966a3d2210c65b0570f7"
   },
   {
     "path": "templates/checkout_payment_choice.html",
@@ -1073,7 +1073,7 @@
   },
   {
     "path": "tests/test_checkout_journey.py",
-    "sha256": "39ef01f1aa1aa2c5dcd5f783bae40c27f7f1a73ad4d4f58cd4a762d030cb3b11"
+    "sha256": "53bf0c675aff7065e4c28915c417e4b474b89f12524c86b2a09427488b581668"
   },
   {
     "path": "tests/test_client_demo.py",
@@ -1121,7 +1121,7 @@
   },
   {
     "path": "tests/test_unified_journey.py",
-    "sha256": "e91a3f259ba0a4efe7766ca66aae039cc9320174fc0aabb36c8eb508ac39b4f9"
+    "sha256": "bf11db80f7626bb34e49199b99adb4ca1176b00f3cf9ad170cdbb2d7e2369438"
   },
   {
     "path": "tests/test_video_media.py",
