@@ -80,7 +80,7 @@ class PerformanceTests(unittest.TestCase):
         self.client.post('/cart/add/1', data={'quantity':'1','csrf_token':token})
         self.assertIn('phone-checkout.js',self.client.get('/checkout').get_data(as_text=True))
         self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
-        page=self.client.get('/checkout').get_data(as_text=True)
-        self.assertIn('data-payment-choice',page)
-        self.assertIn('phone-checkout.js',page)
+        page=self.client.get('/checkout',follow_redirects=True).get_data(as_text=True)
+        self.assertIn('cart-payment-form',page)
+        self.assertIn('cart-auto.js',page)
         self.assertIn('phone-checkout.js',self.client.get('/account/register').get_data(as_text=True))

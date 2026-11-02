@@ -23,7 +23,7 @@ from client_demo import register_client_demo
 from video_processing import transcode_upload, extract_testimonial_audio
 from performance import install_performance, upload_variant
 
-APP_VERSION = '2.6.40'
+APP_VERSION = '2.6.41'
 ROOT = Path(__file__).resolve().parent
 CATEGORIES = ['General Health', "Men’s Health", "Women’s Health", 'Digestive Health', 'Joint Health', 'Skin & Body Care', 'Immune Support', 'Energy & Vitality', 'Mind & Focus', 'Detox & Cleansing']
 SEEDS = [
@@ -189,7 +189,7 @@ def create_app(test_config=None):
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; media-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://sandbox.payfast.co.za https://www.payfast.co.za"
-        if request.endpoint and (request.endpoint.startswith(('owner','eco.')) or request.endpoint in ('cart', 'checkout', 'confirmation', 'login')):
+        if request.endpoint and (request.endpoint.startswith(('owner','eco.','growth.')) or request.endpoint in ('cart', 'checkout', 'confirmation', 'login')):
             response.headers['Cache-Control'] = 'no-store'
             response.headers['X-Robots-Tag'] = 'noindex, nofollow'
         return response
@@ -567,9 +567,11 @@ def create_app(test_config=None):
         view = request.args.get('view', 'overview')
         if view not in ('overview', 'orders', 'products', 'enquiries'):
             view = 'overview'
-        scope = request.args.get('scope', 'real')
+        if view == 'overview':
+            return growth['dashboard']()
+        scope = request.args.get('scope', 'all')
         if scope not in ('real', 'test', 'all'):
-            scope = 'real'
+            scope = 'all'
         clauses, args = [], []
         if scope != 'all':
             clauses.append('e.payment_test=?'); args.append(int(scope == 'test'))
@@ -1012,11 +1014,14 @@ def create_app(test_config=None):
     from checkout_journey import register_checkout_journey
     journey=register_checkout_journey(app,db,eco)
     demo=register_client_demo(app,db,eco)
+    from owner_growth import register_owner_growth
+    growth=register_owner_growth(app,db,admin_only)
     with app.app_context():
         initialize()
         eco['initialize']()
         simple['initialize']()
         demo['initialize']()
+        growth['initialize']()
     return app
 
 

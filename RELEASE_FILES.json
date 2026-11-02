@@ -40,6 +40,10 @@
     "sha256": "77f776bc389893deb1bb3fec530948679d142283f7a08c5894f05c0cbc38fd4c"
   },
   {
+    "path": "OWNER_GROWTH_V2_6_41.md",
+    "sha256": "8b006388c063c81c82caa3b6baa0d06fb755e5ac50753e010e96a41ee2df4467"
+  },
+  {
     "path": "PERFORMANCE_NOTES.md",
     "sha256": "b59fb4cacdbea39134b11966aa444239ae2b15657992f816ef8d6b812bf87759"
   },
@@ -73,7 +77,7 @@
   },
   {
     "path": "START_WINDOWS.ps1",
-    "sha256": "4b025f6fb7eba925dcec0c092d67466b0ba86fdfea3a6dfbc75f14aed2c6f891"
+    "sha256": "e8c92cf1f6def4b94fc46eb9ea9713cb4bf9df44c936735ea3e36e92610e5ade"
   },
   {
     "path": "VIDEO_UPLOADS.md",
@@ -85,7 +89,7 @@
   },
   {
     "path": "app.py",
-    "sha256": "40026a702c9aed10727d2cfa33f37b1145aff035848de855d06c754608f6aa4f"
+    "sha256": "17a9538738daaea5d89451bbe49f4d6de6eb84e82df6b5654f1045f1f4c5cb63"
   },
   {
     "path": "asset_manifest.json",
@@ -110,6 +114,10 @@
   {
     "path": "optimize_assets.py",
     "sha256": "6a863480a68a60034fe28c2c6707a08728431e6ac0ad983ec2a9242d2f563a1f"
+  },
+  {
+    "path": "owner_growth.py",
+    "sha256": "5389cc38ac437612dca6c6f33c0355836f4c63a15280012d34f45531f8af3553"
   },
   {
     "path": "payment_gateway.py",
@@ -161,7 +169,7 @@
   },
   {
     "path": "static/css/owner-ui.css",
-    "sha256": "680c4f79e58ebe44065b9dd0e9f7a710590ee0f6e8d277dc611025859fd24082"
+    "sha256": "860f8e909c58f52e51d11ef20e3aafdd1cea34441bdf86b443995ab7aed08142"
   },
   {
     "path": "static/css/quick-purchase.css",
@@ -837,7 +845,7 @@
   },
   {
     "path": "templates/_owner_nav.html",
-    "sha256": "26d78288726c2706d0a135afb101346d08d529f1802b149ffd279316e3bd9a2a"
+    "sha256": "3cf4c627729dc1b11ae9c088310d3b4139087d0281f57abcbd823c9ef7cb2ea9"
   },
   {
     "path": "templates/_payment_methods.html",
@@ -972,6 +980,10 @@
     "sha256": "75fd9aadb54b34d90b8becdea3c19b2619d63fb7554d23f26e64cbf9355576ab"
   },
   {
+    "path": "templates/owner_growth.html",
+    "sha256": "68c89c535b491e8c136ac2b55e93a36ba7f6f2cc0cdf24a3f7f1a92d9e95902c"
+  },
+  {
     "path": "templates/owner_home_images.html",
     "sha256": "466e03efa1c650295e234bba7f9e5e46c2ef7c26afe1104a12d2f3457a8807ea"
   },
@@ -1029,7 +1041,7 @@
   },
   {
     "path": "templates/policies.html",
-    "sha256": "efb0a0821922fbbaaf46cc3e28546eaccf3ded98a25cc27c9ea3b7ef35944594"
+    "sha256": "7255b92e053ec506f334251c7ff277ff6efa880fa8f71330c92243e32fd84d74"
   },
   {
     "path": "templates/product.html",
@@ -1096,8 +1108,12 @@
     "sha256": "5991d47f35073a89f27e62c3656205153633c78eb9a3d0784ecfe516236514a2"
   },
   {
+    "path": "tests/test_owner_growth.py",
+    "sha256": "0570d7af46163d553ebad368ee831c8fb9568ede4998b8d73bb7fcaed83cfbcb"
+  },
+  {
     "path": "tests/test_owner_workspace.py",
-    "sha256": "b289993a7e5190b9d78ae826bac84f2b74d9e4ca3abb0b5f480610f785aa7409"
+    "sha256": "4effbe4dedff942ea5dc4470a1099fa7968ddb5ddc26efb8d231e0b3d0d51d24"
   },
   {
     "path": "tests/test_parameter_security.py",
@@ -1105,11 +1121,11 @@
   },
   {
     "path": "tests/test_performance.py",
-    "sha256": "33ec7f8ff27e1b48b00c196168e8a8ddf3d3e32fb207cd2aa7acb85989e86678"
+    "sha256": "d55f529f290ca85fb5a90311602e9b455d17434c53da778227c74f6324ff8f3a"
   },
   {
     "path": "tests/test_phone_checkout.py",
-    "sha256": "cdec649f0552984d00b0c17d9c5a771bfa07d5bbbcde2f3a2d23384db53657fb"
+    "sha256": "b7a48da7bd74b884093e88b81980d4ecd171cb3aba20e0339880d022bf96c719"
   },
   {
     "path": "tests/test_store.py",
@@ -1125,7 +1141,7 @@
   },
   {
     "path": "tests/test_video_media.py",
-    "sha256": "8aabde782ea2bd796eabf3a38e95ee3ebefce90e8e3bac49262b33f95bf5dfe5"
+    "sha256": "a50e4c09aaf1e8cbc19d4437d61fb7ad94919ddad0426c98c205bbcfe801271d"
   },
   {
     "path": "tools/performance_audit.py",

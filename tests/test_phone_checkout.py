@@ -95,17 +95,17 @@ class PhoneCheckoutTests(unittest.TestCase):
         self.assertEqual(self.fetch('SELECT shipping,total FROM orders')[0],(5995,85995))
         self.assertEqual(self.fetch('SELECT payment_reference,branch_code FROM pep_orders')[0],('0601234567',self.branch))
 
-    def test_qr_registration_keeps_single_product_and_preserves_cart(self):
+    def test_qr_registration_returns_to_cart_without_losing_existing_items(self):
         with self.client.session_transaction() as s:s['cart']={'2':2}
         self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
         self.assertEqual(self.client.get('/buy/6').location,'/checkout')
-        self.assertIn(b'data-payment-choice',self.client.get('/checkout').data)
+        self.assertIn(b'cart-payment-form',self.client.get('/checkout',follow_redirects=True).data)
         self.post('/checkout/payment-choice',{'payment_method':'pep'})
         result=self.register();self.assertIn(b'Choose your PEP store',result.data)
         with self.client.session_transaction() as s:key=s['checkout_key']
         self.post('/checkout',dict(checkout_key=key,name='QR Customer',fulfillment='pep',branch_code=self.branch,consent='on'))
-        self.assertEqual(self.fetch('SELECT product_id,quantity FROM order_items'),[(6,1)])
-        with self.client.session_transaction() as s:self.assertEqual(s['cart'],{'2':2})
+        self.assertEqual(self.fetch('SELECT product_id,quantity FROM order_items'),[(2,2),(6,1)])
+        with self.client.session_transaction() as s:self.assertEqual(s['cart'],{})
         self.assertEqual(self.client.get('/buy/999999').status_code,404)
 
     def test_qr_png_uses_configured_url_and_owner_cannot_buy(self):
@@ -225,9 +225,9 @@ class PhoneCheckoutTests(unittest.TestCase):
         result=self.post('/cart/add/1',{'quantity':'2'},follow=False)
         self.assertNotEqual(result.location,'/account/register')
         with self.client.session_transaction() as s:self.assertEqual(s['cart'],{'1':2})
-        page=self.client.get('/checkout')
+        page=self.client.get('/checkout',follow_redirects=True)
         self.assertEqual(page.status_code,200)
-        self.assertIn(b'data-payment-choice',page.data)
+        self.assertIn(b'cart-payment-form',page.data)
         self.assertNotIn(b'name="phone"',page.data)
         self.post('/checkout/payment-choice',{'payment_method':'pep'})
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM customers')[0][0],0)
@@ -244,5 +244,5 @@ class PhoneCheckoutTests(unittest.TestCase):
         self.app.config['CUSTOMER_CHECKOUT_REQUIRED']=True
         self.post('/cart/add/1')
         page=self.post('/checkout',{'name':'Guest','fulfillment':'collection','consent':'on'})
-        self.assertIn(b'data-payment-choice',page.data)
+        self.assertIn(b'cart-payment-form',page.data)
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)

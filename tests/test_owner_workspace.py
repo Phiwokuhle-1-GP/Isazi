@@ -23,8 +23,8 @@ class OwnerWorkspaceTests(unittest.TestCase):
             for i,amount in [(1,10000),(2,990000),(4,10000)]:
                 db.execute('INSERT INTO payments_received(order_id,event_key,amount,method,reference) VALUES(?,?,?,?,?)',(i,str(i),amount,'test fixture','fixture'))
     def tearDown(self): self.temp.cleanup()
-    def test_metrics_exclude_test_receipts_and_dispatched_orders(self):
-        with self.app.test_request_context('/owner'):
+    def test_real_scope_excludes_test_orders_and_dispatched_orders(self):
+        with self.app.test_request_context('/owner?scope=real'):
             from flask import session, template_rendered
             session['admin']=True
             captured=[]
@@ -32,11 +32,11 @@ class OwnerWorkspaceTests(unittest.TestCase):
             template_rendered.connect(record,self.app)
             try:self.app.view_functions['owner']()
             finally:template_rendered.disconnect(record,self.app)
-            context=captured[0]
-            self.assertEqual(context['owner_stats']['received'],20000)
-            self.assertEqual(context['owner_stats']['dispatch'],1)
-            self.assertEqual(context['trend_total'],20000)
-            self.assertEqual(context['counts']['orders'],3)
+            data=captured[0]['growth']
+            self.assertEqual(data['real_sales'],20000)
+            self.assertEqual(data['test_sales'],0)
+            self.assertEqual(len(data['dispatch']),1)
+            self.assertEqual(len(data['orders']),3)
     def test_filters_and_owner_access(self):
         text=self.client.get('/owner?view=orders&scope=test').text
         self.assertIn('Test paid',text);self.assertNotIn('Real paid',text)
