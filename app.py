@@ -534,6 +534,8 @@ def create_app(test_config=None):
 
     @app.route('/owner/login', methods=['GET', 'POST'])
     def login():
+        if session.get('admin'):
+            return redirect(url_for('owner'))
         if request.method == 'POST':
             ip = request.remote_addr or 'unknown'
             row = db().execute('SELECT * FROM login_attempts WHERE ip=?', (ip,)).fetchone()

@@ -89,7 +89,7 @@
   },
   {
     "path": "app.py",
-    "sha256": "17a9538738daaea5d89451bbe49f4d6de6eb84e82df6b5654f1045f1f4c5cb63"
+    "sha256": "cb5d5adbe0e8f275f229ea16272d5085867b3521be1c178bd7780c127d26eeaf"
   },
   {
     "path": "asset_manifest.json",
@@ -169,7 +169,7 @@
   },
   {
     "path": "static/css/owner-ui.css",
-    "sha256": "860f8e909c58f52e51d11ef20e3aafdd1cea34441bdf86b443995ab7aed08142"
+    "sha256": "51dd2433cdf567c05c82c692f980df57570e0ed5417f30e838ee96845463a345"
   },
   {
     "path": "static/css/quick-purchase.css",
@@ -845,7 +845,7 @@
   },
   {
     "path": "templates/_owner_nav.html",
-    "sha256": "3cf4c627729dc1b11ae9c088310d3b4139087d0281f57abcbd823c9ef7cb2ea9"
+    "sha256": "a3786c30391166adc4de6bf045e5066cd63778a040473f1721ea65265aa325b9"
   },
   {
     "path": "templates/_payment_methods.html",
@@ -901,7 +901,7 @@
   },
   {
     "path": "templates/base.html",
-    "sha256": "52fc6f2e1b2651125551d90220e976048c59348046d6e7b5e19d5fd3285b0999"
+    "sha256": "696bb75f899f65505a780ff01491756bad32440ec97167e6004513535a813d33"
   },
   {
     "path": "templates/cart.html",
