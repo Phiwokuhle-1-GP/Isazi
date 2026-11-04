@@ -260,6 +260,8 @@ def register_ecosystem(app, db, admin_only):
             return redirect(url_for('owner'))
 
     def current_customer():
+        if session.get('agent_id'):
+            return agent_registration.shopping_customer(db())
         if session.get('admin'):
             return None
         customer=db().execute('SELECT * FROM customers WHERE id=? AND active=1',(session.get('customer_id'),)).fetchone()

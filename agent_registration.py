@@ -16,7 +16,32 @@ CREATE TABLE IF NOT EXISTS agent_phone_accounts (
  pin_hash TEXT NOT NULL,
  code_issued_at TEXT
 );
+CREATE TABLE IF NOT EXISTS champion_customers (
+ agent_id INTEGER PRIMARY KEY REFERENCES agents(id), customer_id INTEGER NOT NULL UNIQUE REFERENCES customers(id)
+);
 '''
+
+
+def shopping_customer(connection):
+    """A champion session authenticates only its dedicated shopping profile."""
+    if session.get('admin') or not session.get('agent_id'):
+        return None
+    return connection.execute('''SELECT c.* FROM customers c JOIN champion_customers m ON m.customer_id=c.id
+        JOIN agents a ON a.id=m.agent_id JOIN agent_phone_accounts p ON p.agent_id=a.id
+        WHERE a.id=? AND a.auth_version=? AND a.approved=1 AND c.active=1''',
+        (session['agent_id'],session.get('agent_version'))).fetchone()
+
+
+def ensure_shopping_profile(connection, agent):
+    phone=connection.execute('SELECT phone FROM agent_phone_accounts WHERE agent_id=?',(agent['id'],)).fetchone()
+    if not phone or not agent['approved']:
+        return
+    if connection.execute('SELECT 1 FROM champion_customers WHERE agent_id=?',(agent['id'],)).fetchone():
+        return
+    # Phone text alone never grants access to an existing customer's purchases.
+    cid=connection.execute('INSERT INTO customers(name,email,phone,password_hash) VALUES(?,?,?,?)',
+        (agent['name'],secrets.token_hex(16)+'@phone.invalid',phone['phone'],generate_password_hash(secrets.token_urlsafe(40)))).lastrowid
+    connection.execute('INSERT INTO champion_customers(agent_id,customer_id) VALUES(?,?)',(agent['id'],cid))
 
 
 def issue_code(connection, agent_id):
@@ -33,7 +58,13 @@ def register_agent_registration(bp, db, throttled, failure, audit):
                 prefix + ':phone:' + phone]
 
     def start_session(agent, pending=False):
+        if not pending:
+            db().execute('BEGIN IMMEDIATE')
+            ensure_shopping_profile(db(),agent)
+            db().commit()
+        retained={key:session[key] for key in ('cart','coupon','referral','referral_at','after_auth_product','quick_product','after_auth_quick','after_auth_checkout','checkout_method') if key in session}
         session.clear()
+        session.update(retained)
         session.permanent = True
         if pending:
             session['agent_application_id'] = agent['id']
@@ -70,7 +101,7 @@ def register_agent_registration(bp, db, throttled, failure, audit):
                 db().rollback()
                 flash('Unable to create this registration. If you have registered, sign in with your cellphone and PIN.', 'error')
                 return render_template('agent_register.html', title='Become a product champion'), 400
-            start_session({'id': agent_id, 'auth_version': 0})
+            start_session(db().execute('SELECT * FROM agents WHERE id=?',(agent_id,)).fetchone())
             flash('Registration complete. Your champion code is ready.', 'success')
             return redirect(url_for('eco.agent_portal'))
         return render_template('agent_register.html', title='Become a product champion')

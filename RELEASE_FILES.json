@@ -89,7 +89,7 @@
   },
   {
     "path": "agent_registration.py",
-    "sha256": "bf3876ed3f43c76cfb4057ce1312e2cc0ffe2f86b90bd6320a78830fec16050b"
+    "sha256": "e16cc7442ce542a011ddb325f29c8ad92ae94a94e3f2a6504aee149281e0c7e2"
   },
   {
     "path": "app.py",
@@ -121,7 +121,7 @@
   },
   {
     "path": "ecosystem.py",
-    "sha256": "163fc94ccda3f100df93091b2162a41c2b01989e93ce8dd4c3a5b86c24efa38a"
+    "sha256": "e50ba1323507a9de3bc9a703221fd8ee3a94d951663716b3a16482cd831a0b6e"
   },
   {
     "path": "optimize_assets.py",
@@ -153,7 +153,7 @@
   },
   {
     "path": "simple_checkout.py",
-    "sha256": "e9635e3406887cfd64715a0a091c71509ed9673680f097caa2c6f4404380bd73"
+    "sha256": "fac7af79dedd276265b192afc9ec7a3c7d7b69e40a8740b9d53044e45b13d1b0"
   },
   {
     "path": "static/cart-auto.js",
@@ -921,7 +921,7 @@
   },
   {
     "path": "templates/agent_portal.html",
-    "sha256": "cff65889935ecbf6409feaa42e98394106bbe59ab77783ac166994f07d6630e5"
+    "sha256": "25765e20121fafbeeee5ad1ced68d6000a2999ce174f17c268360d526bed09ce"
   },
   {
     "path": "templates/agent_register.html",
@@ -937,7 +937,7 @@
   },
   {
     "path": "templates/checkout.html",
-    "sha256": "5780e944d7939bf17c8e705958d4864232b565265aa8d0aefe3aac0517a62b16"
+    "sha256": "bf54d94a01bd374fb4bc87093edb998854d71701b6e8e5c0cebf16217c449456"
   },
   {
     "path": "templates/checkout_access.html",
@@ -1126,6 +1126,10 @@
   {
     "path": "tests/test_champion_share.py",
     "sha256": "252e57b6f0cfd2f3cc265e4c01e121c4843e82fed328e7d2ab191e91b81da755"
+  },
+  {
+    "path": "tests/test_champion_shopping.py",
+    "sha256": "9fc15426824993b7355c128aecf80cc0e899ccfcb19ba21eca42a6b4667b015e"
   },
   {
     "path": "tests/test_champion_simulation.py",

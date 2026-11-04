@@ -89,7 +89,8 @@ def register_simple(app, db, admin_only, eco):
     def context():
         customer=eco['current_customer']()
         quick=db().execute('SELECT * FROM products WHERE id=? AND active=1',(session.get('quick_product'),)).fetchone()
-        return dict(quick_product_card=quick,phone_account=account(customer),customer_code=('ISZ-C%07d'%customer['id']) if customer else '',
+        from agent_registration import shopping_customer
+        return dict(quick_product_card=quick,champion_checkout=bool(shopping_customer(db())),phone_account=account(customer),customer_code=('ISZ-C%07d'%customer['id']) if customer else '',
                     bundle_ids={row[0] for row in db().execute('SELECT id FROM products WHERE active=1 AND is_bundle=1')},qr_base=qr_base(),pep_branches=list(branches.values()),pep_directory_date=directory['updated'],pep_config=public_config())
     app.context_processor(context)
 
@@ -165,7 +166,11 @@ def register_simple(app, db, admin_only, eco):
 
     def validate_checkout(fields, subtotal):
         customer=eco['current_customer']();phone_account=account(customer)
-        if phone_account:
+        from agent_registration import shopping_customer
+        champion=shopping_customer(db())
+        if champion:
+            fields['phone']=champion['phone'];fields['email']=champion['email']
+        elif phone_account:
             fields['phone']=phone_account['phone'];fields['email']=customer['email']
         if fields['fulfillment']!='pep': return None
         if not customer: raise ValueError('Sign in before choosing PEP pickup.')
