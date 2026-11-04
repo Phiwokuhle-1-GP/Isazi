@@ -1,4 +1,5 @@
 """End-to-end 5% buyer discount and credit attribution using links or codes."""
+from contextlib import closing
 import sqlite3
 import unittest
 import test_store
@@ -62,7 +63,7 @@ class ChampionOfferTests(unittest.TestCase):
 
     def test_promotion_does_not_stack_and_champion_can_replace_it(self):
         code=self.champion()
-        with sqlite3.connect(self.db_path) as db:db.execute("INSERT INTO coupons(code,kind,value,max_uses) VALUES('SAVE10','percent',1000,100)")
+        with closing(sqlite3.connect(self.db_path)) as db, db:db.execute("INSERT INTO coupons(code,kind,value,max_uses) VALUES('SAVE10','percent',1000,100)")
         self.client.get('/r/'+code);self.post('/cart/add/1',dict(quantity='3'))
         self.post('/cart/coupon',dict(code='SAVE10'))
         self.assertIn(b'R540.00',self.client.get('/cart').data)
@@ -72,7 +73,7 @@ class ChampionOfferTests(unittest.TestCase):
 
     def test_paused_champion_has_no_discount_or_credit(self):
         code=self.champion();self.client.get('/r/'+code)
-        with sqlite3.connect(self.db_path) as db:db.execute('UPDATE agents SET approved=0 WHERE id=1')
+        with closing(sqlite3.connect(self.db_path)) as db, db:db.execute('UPDATE agents SET approved=0 WHERE id=1')
         self.assertEqual(self.client.get('/r/'+code).status_code,404)
         self.post('/cart/add/1',dict(quantity='3'))
         self.assertIn(b'unavailable',self.client.get('/cart').data)

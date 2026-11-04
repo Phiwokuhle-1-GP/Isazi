@@ -1117,11 +1117,11 @@
   },
   {
     "path": "tests/test_champion_offers.py",
-    "sha256": "7868d6e4c929a354fb620d4c7e4f5a8ae98609a9597b60ef2e913949e087931d"
+    "sha256": "30ccbf334fd79d198b00466b7215b0b2c6d4f4ff3bf96bc90815a43275c09a3b"
   },
   {
     "path": "tests/test_champion_rewards.py",
-    "sha256": "084dcae7ffaca768f11837795885279b3af4b5751943101f39cb27f3ebed0af0"
+    "sha256": "c8a70fcca84cd175b02faeb6bcf125b0de0a19c459928c547531785c35a3f3d1"
   },
   {
     "path": "tests/test_champion_share.py",
@@ -1129,7 +1129,7 @@
   },
   {
     "path": "tests/test_champion_simulation.py",
-    "sha256": "95c3330e0cb9c42acbc326531a7d55def7cb1365f3c230f9ede096dc5aa5a037"
+    "sha256": "5d2391ce056f667ce22268f3aac52a05be9426a67802715f6131d89b8164c066"
   },
   {
     "path": "tests/test_champion_test_payout.py",
@@ -1185,7 +1185,7 @@
   },
   {
     "path": "tests/test_store.py",
-    "sha256": "ff62b58d05f1ce93ec5fe0f1ab94913ff64393eaa8adb2db06ee1a3408c5a316"
+    "sha256": "d628a0af5d93e7a5268538487a30ec6c320e1d722bfdcae31c0e3ba2e974327c"
   },
   {
     "path": "tests/test_story_library.py",

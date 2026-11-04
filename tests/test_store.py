@@ -1,6 +1,7 @@
 """Behavioural tests; only temporary databases are used."""
 import io
 import re
+from contextlib import closing
 import sqlite3
 import sys
 import tempfile
@@ -19,7 +20,7 @@ class StoreTests(unittest.TestCase):
         self.app = create_app({'TESTING': True, 'CUSTOMER_CHECKOUT_REQUIRED':False, 'DATABASE': self.db_path, 'UPLOAD_DIR': str(Path(self.tmp.name) / 'uploads')})
         self.app.secret_key = 'test-only-key'
         self.client = self.app.test_client()
-        with sqlite3.connect(self.db_path) as db:
+        with closing(sqlite3.connect(self.db_path)) as db, db:
             db.execute('UPDATE products SET stock=20')
         self.client.get('/')
 
@@ -53,7 +54,7 @@ class StoreTests(unittest.TestCase):
         return self.post('/checkout', data)
 
     def fetch(self, sql, args=()):
-        with sqlite3.connect(self.db_path) as db:
+        with closing(sqlite3.connect(self.db_path)) as db, db:
             return db.execute(sql, args).fetchall()
 
     def test_social_profiles_validate_and_publish_without_invented_accounts(self):
@@ -148,7 +149,7 @@ class StoreTests(unittest.TestCase):
         response = self.order(email='invalid')
         self.assertIn(b'Enter a valid email address',response.data)
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],0)
-        with sqlite3.connect(self.db_path) as db:
+        with closing(sqlite3.connect(self.db_path)) as db, db:
             db.execute('UPDATE products SET stock=0 WHERE id=1')
         response=self.order()
         self.assertIn(b'no longer available',response.data)
@@ -157,7 +158,7 @@ class StoreTests(unittest.TestCase):
 
     def test_atomic_rollback_when_one_item_sells_out(self):
         self.post('/cart/add/2')
-        with sqlite3.connect(self.db_path) as db:
+        with closing(sqlite3.connect(self.db_path)) as db, db:
             db.execute('UPDATE products SET stock=0 WHERE id=2')
         self.order()
         self.assertEqual(self.fetch('SELECT stock FROM products WHERE id=1')[0][0],20)
@@ -165,7 +166,7 @@ class StoreTests(unittest.TestCase):
 
     def test_duplicate_submission_does_not_create_second_order(self):
         self.order()
-        with sqlite3.connect(self.db_path) as db:
+        with closing(sqlite3.connect(self.db_path)) as db, db:
             key=db.execute('SELECT checkout_key FROM orders').fetchone()[0]
         self.post('/checkout',dict(checkout_key=key,name='Test',email='test@example.com',phone='0601234567',fulfillment='collection',consent='on'))
         self.assertEqual(self.fetch('SELECT COUNT(*) FROM orders')[0][0],1)

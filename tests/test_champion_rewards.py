@@ -1,4 +1,5 @@
 """Champion credits and SMS transport tests; no live messages are sent."""
+from contextlib import closing
 import sqlite3
 import unittest
 from unittest.mock import Mock
@@ -103,7 +104,7 @@ class ChampionRewardsTests(unittest.TestCase):
 
     def test_migration_pending_only_and_no_startup_sms(self):
         code=self.register()
-        with sqlite3.connect(self.db_path) as db:
+        with closing(sqlite3.connect(self.db_path)) as db, db:
             db.execute('UPDATE agents SET approved=0 WHERE id=1')
             aid=db.execute("INSERT INTO agents(name,email,code,rate_bps,approved) VALUES('Pending','','PENDING-OLD',0,0)").lastrowid
             db.execute('INSERT INTO agent_phone_accounts(agent_id,phone,pin_hash) VALUES(?,?,?)',(aid,'0711234567',generate_password_hash('1111')))

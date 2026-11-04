@@ -1,6 +1,7 @@
 """Simulated payments credit the champion end to end without real funds."""
 import json
 from pathlib import Path
+from contextlib import closing
 import sqlite3
 import unittest
 from unittest.mock import patch
@@ -58,7 +59,7 @@ class ChampionSimulationTests(unittest.TestCase):
 
     def test_existing_paid_test_order_recovered_once_on_restart(self):
         self.prepare();self.post(self.route)
-        with sqlite3.connect(self.db_path) as db:
+        with closing(sqlite3.connect(self.db_path)) as db, db:
             db.execute('DELETE FROM champion_test_credits')
             db.execute("DELETE FROM settings WHERE key='_champion_test_credit_backfill_v1'")
         cfg=dict(TESTING=True,DATABASE=self.db_path,UPLOAD_DIR=self.app.config['UPLOAD_DIR'],DEMO_PAYMENTS_ENABLED=True)
