@@ -1,0 +1,47 @@
+/* Header reflow: preserve every link and keep account/cart inside the container. */
+header>.nav{min-width:0}
+header .nav>.brand,header .nav>.search,header #primary-navigation{min-width:0}
+header .nav>.search input{width:100%;min-width:0}
+@media(min-width:768px){
+ header>.nav{display:grid;grid-template-columns:minmax(200px,280px) minmax(0,1fr) 44px 52px;column-gap:clamp(10px,1.1vw,20px);row-gap:10px;height:auto;min-height:0;padding:14px 0;align-items:center}
+ header .nav>.brand{grid-column:1;grid-row:1;width:auto;gap:8px}
+ header .brand-words{min-width:0;white-space:normal}
+ header .brand-words strong{font-size:clamp(16px,1.15vw,19px);white-space:normal;line-height:1.15}
+ header .brand-words small{font-size:7px}
+ header .brand-words b{font-size:12px}
+ header #primary-navigation{grid-column:1/-1;grid-row:2;display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;width:100%;gap:4px 22px;order:initial;padding:0;border:0}
+ header #primary-navigation a{font-size:14px;white-space:normal;text-align:center;line-height:1.35;padding:9px 0;min-height:38px}
+ header .nav>.search{grid-column:2;grid-row:1;order:initial;width:100%;min-width:0;max-width:420px;justify-self:end;margin:0;height:48px}
+ header .nav>.search input{font-size:14px;padding:10px 14px}
+ header .nav>.search button{flex:0 0 48px;padding:8px 12px}
+ header .nav>.icon-link{grid-column:3;grid-row:1;display:grid;place-items:center;width:44px;min-width:0;height:44px;margin:0}
+ header .nav>.cart-link{grid-column:4;grid-row:1;display:flex;align-items:center;justify-content:center;width:52px;min-width:0;height:44px;margin:0;gap:2px}
+ header .nav .account-icon,header .nav .cart-icon{width:28px;height:28px;flex:0 0 28px}
+ header .nav>.cart-link span{padding:2px 5px;font-size:10px;flex-shrink:0}
+ header .nav-menu-toggle{display:none}
+}
+@media(min-width:1500px){
+ header>.nav{grid-template-columns:minmax(220px,280px) minmax(0,1fr) minmax(180px,280px) 44px 52px;min-height:90px}
+ header #primary-navigation{grid-column:2;grid-row:1;gap:4px clamp(10px,1vw,18px)}
+ header #primary-navigation a{font-size:clamp(14px,.85vw,16px)}
+ header .nav>.search{grid-column:3;max-width:none}
+ header .nav>.icon-link{grid-column:4}
+ header .nav>.cart-link{grid-column:5}
+}
+@media(max-width:767px){
+ header>.nav{display:grid;grid-template-columns:minmax(0,1fr) 40px 40px 48px;column-gap:4px;row-gap:8px;height:auto;min-height:0;padding:12px 0;align-items:center}
+ header .nav>.brand{grid-column:1;grid-row:1;width:auto;gap:6px}
+ header .brand-words{min-width:0;white-space:normal}
+ header .brand-words strong{font-size:clamp(11px,3.1vw,16px);white-space:normal;overflow-wrap:anywhere;line-height:1.2}
+ header .brand-words small{display:none}
+ header .brand-words b{font-size:10px}
+ header .nav>.nav-menu-toggle{grid-column:2;grid-row:1;display:flex;width:40px;height:44px;padding:8px;align-items:center;justify-content:center;flex-direction:column;gap:4px}
+ header .nav>.icon-link{grid-column:3;grid-row:1;display:grid;place-items:center;width:40px;height:44px;margin:0}
+ header .nav>.cart-link{grid-column:4;grid-row:1;display:flex;align-items:center;justify-content:center;width:48px;min-width:0;height:44px;margin:0;gap:1px}
+ header .nav .account-icon,header .nav .cart-icon{width:24px;height:24px;flex-shrink:0}
+ header .nav>.cart-link span{font-size:10px;padding:2px 4px}
+ header .nav>.search{grid-column:1/-1;grid-row:2;width:100%;max-width:none;min-width:0;order:initial;height:44px;margin:0}
+ header #primary-navigation{grid-column:1/-1;grid-row:3;display:none;flex-direction:column;align-items:stretch;width:100%;gap:0;padding:6px 0;border-top:1px solid var(--line);order:initial}
+ header #primary-navigation.is-open{display:flex}
+ header #primary-navigation a{display:flex;align-items:center;font-size:15px;min-height:44px;padding:10px 12px;white-space:normal}
+}

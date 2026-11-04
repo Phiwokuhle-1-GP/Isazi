@@ -88,12 +88,24 @@
     "sha256": "63f283fbaad3408310686c6fea5951293f20650dcd161231ce2f8f29465c306f"
   },
   {
+    "path": "agent_registration.py",
+    "sha256": "bf3876ed3f43c76cfb4057ce1312e2cc0ffe2f86b90bd6320a78830fec16050b"
+  },
+  {
     "path": "app.py",
     "sha256": "cb5d5adbe0e8f275f229ea16272d5085867b3521be1c178bd7780c127d26eeaf"
   },
   {
     "path": "asset_manifest.json",
     "sha256": "ce8e203945ca695d88bffaac411c711d771125b2c656f96d3fcdd955020f9699"
+  },
+  {
+    "path": "champion_offers.py",
+    "sha256": "f8127846f7dfea33cb92f7e78a64d6013a974e0277f63edb1da20c8dacd773b0"
+  },
+  {
+    "path": "champion_rewards.py",
+    "sha256": "4bc625571068db71f1fbff0ab6951529bdb56f12c0ea8cfde66cfb4d60e67686"
   },
   {
     "path": "checkout_journey.py",
@@ -109,7 +121,7 @@
   },
   {
     "path": "ecosystem.py",
-    "sha256": "ba73b2bbfc64fb6845e413ce4530286168deb22c3c7f7cc0c52b4a4eb4cba741"
+    "sha256": "163fc94ccda3f100df93091b2162a41c2b01989e93ce8dd4c3a5b86c24efa38a"
   },
   {
     "path": "optimize_assets.py",
@@ -141,11 +153,15 @@
   },
   {
     "path": "simple_checkout.py",
-    "sha256": "dfe3a5140a09f13b39285e27fcf4dd4facf9c3452554b34ef8c2f5a0636309b7"
+    "sha256": "e9635e3406887cfd64715a0a091c71509ed9673680f097caa2c6f4404380bd73"
   },
   {
     "path": "static/cart-auto.js",
     "sha256": "b4c2bad39cf33f48c7bda20791dd5a3e0def3bdd0856d775b690d45e66afe48d"
+  },
+  {
+    "path": "static/champion-share.js",
+    "sha256": "d3cda0d8b530ecad89fed889bbdd88b5ab910f2de8e6f415a928ff6f08e5d3c8"
   },
   {
     "path": "static/css/checkout-journey.css",
@@ -158,6 +174,10 @@
   {
     "path": "static/css/ecosystem.css",
     "sha256": "c39e27e09ae360505d64ba391e7efb98858f681664cf6c642a96242eefcf1d5b"
+  },
+  {
+    "path": "static/css/header-fit.css",
+    "sha256": "6531ce7182c3f2b320fbbb193e5ab2b29098cf5619cf229790613b601946c7dd"
   },
   {
     "path": "static/css/layout.css",
@@ -845,7 +865,7 @@
   },
   {
     "path": "templates/_owner_nav.html",
-    "sha256": "a3786c30391166adc4de6bf045e5066cd63778a040473f1721ea65265aa325b9"
+    "sha256": "36c418e3e5e708bd990daef999519f205309271416b04c2da0e8c60feefd749f"
   },
   {
     "path": "templates/_payment_methods.html",
@@ -888,28 +908,36 @@
     "sha256": "0f6f4fd5a04f57659e445cdba6032ef5452ff230603bdf42c3f9d1782bf64cf4"
   },
   {
+    "path": "templates/agent_application.html",
+    "sha256": "a13ce2c7f84d93a0b4a5a9a20f08c8b2944b52d3d7a8c3cb9724412c9fadb4e2"
+  },
+  {
     "path": "templates/agent_invite.html",
     "sha256": "7e2a7cedd719bdd76765fda5bed2be53d7305b6950499bd39a5cc27ffef55a86"
   },
   {
     "path": "templates/agent_login.html",
-    "sha256": "4ce9f451266e28d7499a46cf6b2ec1d7a7f5df499a50a27cc81462e01d94a306"
+    "sha256": "93287d24269c7fd437f4789912531eb2434a32094cd9f2f574675b8686f7fee2"
   },
   {
     "path": "templates/agent_portal.html",
-    "sha256": "761364f46436562bfb6f27a981d638da253802065c9a5d24368441634ca38e57"
+    "sha256": "cff65889935ecbf6409feaa42e98394106bbe59ab77783ac166994f07d6630e5"
+  },
+  {
+    "path": "templates/agent_register.html",
+    "sha256": "e8a01d8087c50650c02ca81149314ae5300f2e24d88c0f6321fc60d5aff99ab4"
   },
   {
     "path": "templates/base.html",
-    "sha256": "696bb75f899f65505a780ff01491756bad32440ec97167e6004513535a813d33"
+    "sha256": "83da0b2267f42e8d372f6c943bb7b97b3bbcc88c9ad09e0de71cacbf0969b055"
   },
   {
     "path": "templates/cart.html",
-    "sha256": "cb0bbccee15a9d42c323078d3f896e1b971492c44a1b52fa5eda25d2bef958ed"
+    "sha256": "1f805a2f3660a63121dd5da818fce01abc5c50d152cc59fb078668b9d3765a0b"
   },
   {
     "path": "templates/checkout.html",
-    "sha256": "7d8a830f4e07893927246d0a0becac4af06c1c546a4b0d0b7e4cb5187ebb6015"
+    "sha256": "5780e944d7939bf17c8e705958d4864232b565265aa8d0aefe3aac0517a62b16"
   },
   {
     "path": "templates/checkout_access.html",
@@ -957,7 +985,7 @@
   },
   {
     "path": "templates/home.html",
-    "sha256": "34449ae5c51f6f94ad84890d0fc10049cb7b95234a0efb1b787f215f9b4a2aca"
+    "sha256": "436e510a3bb3fcc7746c36e4696db2c3595e20e61e6de53e76a3f7c364cdf4f2"
   },
   {
     "path": "templates/login.html",
@@ -969,11 +997,11 @@
   },
   {
     "path": "templates/owner_agents.html",
-    "sha256": "55ab15218a521b3362e269fad213e34b4c65189dcbc108b03c28098a18b396ec"
+    "sha256": "252f60e15c7a23e325dc7194f0d8ad6f276c25b3852cd925848ab0d3ee26ee91"
   },
   {
     "path": "templates/owner_commissions.html",
-    "sha256": "72998d72481fad238a3f4c80e51fd5d937948f94c3484b9dcb94d57547dcd0bd"
+    "sha256": "9736e5d31599d7de3d72cb097a6101e545dcf697d5978a53332cbc7b3a62b9ba"
   },
   {
     "path": "templates/owner_customers.html",
@@ -1072,6 +1100,10 @@
     "sha256": "a84d6531d0413cd41b66c61b501e6c5537c5bfbfc6d4ccbe96852748963d3632"
   },
   {
+    "path": "tests/test_agent_registration.py",
+    "sha256": "04c5cbe10607696d2d4347dd7f1387f4a44bb13b079d587939e71d5305ea0a34"
+  },
+  {
     "path": "tests/test_audio_testimonials.py",
     "sha256": "87fefc1c8cc57976080e608efe4c6c24fcd22e99f46dbef316a856c0baff1d26"
   },
@@ -1082,6 +1114,26 @@
   {
     "path": "tests/test_catalog_additions.py",
     "sha256": "df6b78a8841c52fbd00846f8bd8317a7f4733c0f980b21c98ea7c91836bad4d8"
+  },
+  {
+    "path": "tests/test_champion_offers.py",
+    "sha256": "7868d6e4c929a354fb620d4c7e4f5a8ae98609a9597b60ef2e913949e087931d"
+  },
+  {
+    "path": "tests/test_champion_rewards.py",
+    "sha256": "084dcae7ffaca768f11837795885279b3af4b5751943101f39cb27f3ebed0af0"
+  },
+  {
+    "path": "tests/test_champion_share.py",
+    "sha256": "252e57b6f0cfd2f3cc265e4c01e121c4843e82fed328e7d2ab191e91b81da755"
+  },
+  {
+    "path": "tests/test_champion_simulation.py",
+    "sha256": "95c3330e0cb9c42acbc326531a7d55def7cb1365f3c230f9ede096dc5aa5a037"
+  },
+  {
+    "path": "tests/test_champion_test_payout.py",
+    "sha256": "27e61073be0d7d0c0e338d2166d3816722c2a3e912ea4e2f9bbcafefaf9b7113"
   },
   {
     "path": "tests/test_checkout_journey.py",
@@ -1106,6 +1158,10 @@
   {
     "path": "tests/test_normal_release.py",
     "sha256": "5991d47f35073a89f27e62c3656205153633c78eb9a3d0784ecfe516236514a2"
+  },
+  {
+    "path": "tests/test_owner_champion_test_ledger.py",
+    "sha256": "547ed73652c2b67db3c671b7e2b068a54236128fd53c42cba3a2578eb3740910"
   },
   {
     "path": "tests/test_owner_growth.py",

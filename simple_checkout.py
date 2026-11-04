@@ -275,6 +275,14 @@ def register_simple(app, db, admin_only, eco):
         body=f"Isazi order ISZ-{order_id:05d} {phrase} {row['branch_name']} ({row['branch_code']}). PAXI tracking: {reference}. PAXI sends your collection PIN when the parcel is ready. Bring your ID and PAXI collection PIN, not your Isazi login PIN."
         queue_sms(connection,order_id,status+':'+reference,body)
 
+    def send_text(values,recipient,body):
+        sid=values['sms_sid'];payload=urlencode({'To':'+27'+recipient[1:],'From':values['sms_from'],'Body':body}).encode()
+        auth=base64.b64encode((sid+':'+values['sms_token']).encode()).decode()
+        req=Request(f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json',data=payload,headers={'Authorization':'Basic '+auth,'Content-Type':'application/x-www-form-urlencoded'})
+        with urlopen(req,timeout=15) as response: result=json.load(response)
+        if not re.fullmatch(r'S[MM][0-9a-fA-F]{32}',result.get('sid','')): raise ValueError('Unrecognised provider response')
+        return result['sid']
+
     def deliver_sms(sms_id):
         values=config();connection=db();connection.execute('BEGIN IMMEDIATE')
         row=connection.execute('SELECT s.*,e.payment_test,o.status AS order_status FROM sms_outbox s JOIN order_extra e ON e.order_id=s.order_id JOIN orders o ON o.id=s.order_id WHERE s.id=?',(sms_id,)).fetchone()
@@ -284,12 +292,8 @@ def register_simple(app, db, admin_only, eco):
             connection.rollback();return 'unconfigured'
         connection.execute("UPDATE sms_outbox SET status='Sending - reconcile before retry' WHERE id=?",(sms_id,));connection.commit()
         try:
-            sid=values['sms_sid'];payload=urlencode({'To':'+27'+row['recipient'][1:],'From':values['sms_from'],'Body':row['body']}).encode()
-            auth=base64.b64encode((sid+':'+values['sms_token']).encode()).decode()
-            req=Request(f'https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json',data=payload,headers={'Authorization':'Basic '+auth,'Content-Type':'application/x-www-form-urlencoded'})
-            with urlopen(req,timeout=15) as response: result=json.load(response)
-            if not re.fullmatch(r'S[MM][0-9a-fA-F]{32}',result.get('sid','')): raise ValueError('Unrecognised provider response')
-            connection.execute('UPDATE sms_outbox SET status=?,provider_id=? WHERE id=?',('Provider accepted',result['sid'],sms_id));connection.commit()
+            provider_id=send_text(values,row['recipient'],row['body'])
+            connection.execute('UPDATE sms_outbox SET status=?,provider_id=? WHERE id=?',('Provider accepted',provider_id,sms_id));connection.commit()
             return 'accepted'
         except Exception:
             return 'uncertain'
@@ -324,6 +328,6 @@ def register_simple(app, db, admin_only, eco):
         return render_template('owner_product_qr.html',products=products,title='Product & combo QR codes')
 
     app.register_blueprint(bp)
-    result=dict(initialize=initialize,account=account,register_phone=register_phone,login_phone=login_phone,validate_checkout=validate_checkout,shipping=shipping,capture=capture,order_info=order_info,delivery_guard=delivery_guard,dispatch_sms=dispatch_sms)
+    result=dict(initialize=initialize,account=account,register_phone=register_phone,login_phone=login_phone,validate_checkout=validate_checkout,shipping=shipping,capture=capture,order_info=order_info,delivery_guard=delivery_guard,dispatch_sms=dispatch_sms,sms_config=config,send_text=send_text)
     app.extensions['simple_checkout']=result
     return result

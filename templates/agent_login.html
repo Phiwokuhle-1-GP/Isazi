@@ -1,1 +1,12 @@
-{% extends 'base.html' %}{% block content %}<form method="post" class="panel login form-stack"><span class="eyebrow light">APPROVED SALES AGENTS</span><h1>Agent sign in</h1><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Agent code<input name="code" maxlength="24" required autocomplete="username"></label><label>Password<input name="password" type="password" maxlength="256" autocomplete="current-password" required></label><button class="button">Open My Portal →</button><p class="muted">Access is by owner invitation and approval.</p><a href="{{ url_for('contact') }}">Enquire about becoming an agent</a></form>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<section class="panel login form-stack">
+<span class="eyebrow light">PRODUCT CHAMPIONS</span><h1>Product champion sign in</h1>
+<p>Sign in to view your champion code, purchase credits and balance.</p>
+<form method="post" class="form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Cellphone number<input type="tel" name="phone" autocomplete="username" maxlength="25" placeholder="060 123 4567" required></label>
+<label>4-digit PIN<input type="password" name="pin" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" required></label>
+<button class="button">Sign in →</button></form>
+<a href="{{ url_for('eco.agent_register') }}">New champion? Register here →</a>
+<details><summary>Invited agent with a code and password?</summary><form method="post" class="form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Agent code<input name="code" maxlength="24" autocomplete="username" required></label><label>Password<input name="password" type="password" maxlength="256" autocomplete="current-password" required></label><button class="button outline">Open my portal →</button></form></details>
+<a href="{{ url_for('contact') }}">Need help signing in?</a>
+</section>{% endblock %}

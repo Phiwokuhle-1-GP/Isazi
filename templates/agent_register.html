@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block content %}
+<section class="panel login form-stack">
+<span class="eyebrow light">JOIN ISAZI</span><h1>Become a product champion</h1>
+<p>Register with your cellphone and create a PIN. Your champion code and portal are available immediately. Enter your code at checkout to earn purchase credit after payment is confirmed.</p>
+<form method="post" class="form-stack"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Full name<input name="name" autocomplete="name" minlength="2" maxlength="120" required></label>
+<label>Cellphone number<input type="tel" name="phone" autocomplete="username" maxlength="25" placeholder="060 123 4567" required></label>
+<label>Create a 4-digit PIN<input type="password" name="pin" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label>
+<label>Confirm PIN<input type="password" name="confirm_pin" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label>
+<label class="check"><input type="checkbox" name="consent" required>I agree to my details being used to create and manage my product champion account.</label>
+<a href="{{ url_for('policies') }}">Read the privacy information</a>
+<button class="button">Register & get my code →</button></form>
+<a href="{{ url_for('eco.agent_login') }}">Already registered? Sign in →</a>
+</section>{% endblock %}

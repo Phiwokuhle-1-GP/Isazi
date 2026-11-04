@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block content %}
+<section class="panel login form-stack"><span class="eyebrow light">PRODUCT CHAMPION</span>
+<h1>{{ 'Access paused' if paused else 'Application received' }}</h1>
+<p>{% if paused %}Your champion access is paused. Contact the Isazi team for assistance.{% else %}Sign in again to open your product champion portal.{% endif %}</p>
+<a class="button" href="{{ url_for('eco.agent_application') }}">Check approval status →</a>
+<a href="{{ url_for('contact') }}">Contact the Isazi team</a>
+<form method="post" action="{{ url_for('eco.agent_logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="button outline">Sign out</button></form>
+</section>{% endblock %}

@@ -17,6 +17,9 @@ from urllib.parse import quote, urlsplit
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for, Response
 from werkzeug.security import check_password_hash, generate_password_hash
 import payment_gateway as gateway
+import agent_registration
+import champion_rewards
+import champion_offers
 
 def valid_email(value):
     return len(value)<=200 and bool(re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+", value))
@@ -150,6 +153,7 @@ def register_ecosystem(app, db, admin_only):
         extra = extra_for(connection, order_id)
         if not extra or not extra['agent_id']:
             return
+        champion_rewards.sync_test_credit(connection, order, extra)
         info = financials(connection, order_id)
         eligible = not extra['payment_test'] and order['status'] in ('Paid', 'Ready', 'Completed') and info['received'] >= order['total']
         target = max(0,order['subtotal']-extra['discount']-info['goods_refunded']) * extra['rate_bps'] // 10000 if eligible else 0
@@ -165,9 +169,10 @@ def register_ecosystem(app, db, admin_only):
         return session.get('referral', '')
 
     def resolve_agent(code):
+        code = champion_offers.parse_code(code)
         if not code:
             return None
-        return db().execute('SELECT * FROM agents WHERE code=? AND approved=1', (code.strip().upper(),)).fetchone()
+        return db().execute('SELECT * FROM agents WHERE code=? AND approved=1', (code,)).fetchone()
 
     def capture_order(connection, order_id, form, coupon=None):
         agent = resolve_agent(form.get('agent_code', current_referral()).strip())
@@ -197,6 +202,8 @@ def register_ecosystem(app, db, admin_only):
 
     def initialize():
         db().executescript(SCHEMA)
+        db().executescript(agent_registration.SCHEMA)
+        champion_rewards.initialize(db())
         if 'stock_pool' not in {row[1] for row in db().execute('PRAGMA table_info(order_extra)')}:
             db().execute("ALTER TABLE order_extra ADD COLUMN stock_pool TEXT NOT NULL DEFAULT 'store'")
         if 'payment_test' not in {row[1] for row in db().execute('PRAGMA table_info(order_extra)')}:
@@ -208,6 +215,7 @@ def register_ecosystem(app, db, admin_only):
         if not db().execute("SELECT 1 FROM settings WHERE key='_eco_finance_backfill_v1'").fetchone():
             db().execute("INSERT OR IGNORE INTO payments_received(order_id,event_key,amount,method,reference) SELECT o.id,'manual:'||o.id,o.total,'Legacy owner confirmation','ISZ-'||o.id FROM orders o WHERE o.status IN ('Paid','Ready','Completed') AND NOT EXISTS(SELECT 1 FROM payments_received p WHERE p.order_id=o.id)")
             db().execute("INSERT INTO settings(key,value) VALUES('_eco_finance_backfill_v1','1')")
+        champion_rewards.reconcile_test_credits(db())
         db().commit()
 
     def throttled(key):
@@ -236,6 +244,8 @@ def register_ecosystem(app, db, admin_only):
             agent = resolve_agent(request.args.get('ref',''))
             if agent:
                 session['referral'],session['referral_at'] = agent['code'],time.time()
+                if db().execute('SELECT 1 FROM agent_phone_accounts WHERE agent_id=?',(agent['id'],)).fetchone():
+                    session.pop('coupon',None);session.pop('checkout_key',None)
 
     @app.context_processor
     def connected_context():
@@ -405,6 +415,13 @@ def register_ecosystem(app, db, admin_only):
     def coupon_for_checkout(connection,subtotal):
         code=session.get('coupon','')
         if not code:
+            referral = request.form.get('agent_code', current_referral()) if request.endpoint=='checkout' and request.method=='POST' else current_referral()
+            agent = resolve_agent(referral)
+            if referral and not agent:
+                raise ValueError('The champion code is unavailable. Remove it from your cart or use an active code.')
+            champion = agent and connection.execute('SELECT 1 FROM agent_phone_accounts WHERE agent_id=?',(agent['id'],)).fetchone()
+            if champion:
+                return dict(coupon=None,discount=subtotal*champion_offers.BUYER_DISCOUNT_BPS//10000,champion_code=agent['code'],discount_label='Champion discount (5%)')
             return dict(coupon=None,discount=0)
         coupon=connection.execute('SELECT * FROM coupons WHERE code=? AND active=1',(code,)).fetchone()
         if not coupon or (coupon['expires'] and coupon['expires']<datetime.utcnow().strftime('%Y-%m-%d')) or subtotal<coupon['minimum']:
@@ -418,17 +435,25 @@ def register_ecosystem(app, db, admin_only):
     def cart_promotion(subtotal):
         try:
             promo=coupon_for_checkout(db(),subtotal)
-            return dict(discount=promo['discount'],coupon_code=session.get('coupon',''),coupon_error='')
+            return dict(discount=promo['discount'],coupon_code=session.get('coupon','') or promo.get('champion_code',''),discount_label=promo.get('discount_label','Promotion '+session.get('coupon','')),coupon_error='')
         except ValueError as error:
-            return dict(discount=0,coupon_code=session.get('coupon',''),coupon_error=str(error))
+            return dict(discount=0,coupon_code=session.get('coupon','') or current_referral(),discount_label='',coupon_error=str(error))
 
     @bp.post('/cart/coupon')
     def cart_coupon():
         if request.form.get('remove'):
-            session.pop('coupon',None);return redirect(url_for('cart'))
-        code=request.form.get('code','').strip().upper()
-        if not re.fullmatch(r'[A-Z0-9][A-Z0-9_-]{2,23}',code):
-            flash('Enter a valid promotion code.','error');return redirect(url_for('cart'))
+            for key in ('coupon','referral','referral_at','checkout_key'):
+                session.pop(key,None)
+            return redirect(url_for('cart'))
+        code=champion_offers.parse_code(request.form.get('code',''))
+        if not code:
+            flash('Enter a valid promotion code, champion code or referral link.','error');return redirect(url_for('cart'))
+        agent=resolve_agent(code)
+        if agent:
+            session['referral'],session['referral_at']=agent['code'],time.time()
+            session.pop('coupon',None);session.pop('checkout_key',None)
+            flash('Champion code applied. Eligible goods receive a 5% buyer discount.' if db().execute('SELECT 1 FROM agent_phone_accounts WHERE agent_id=?',(agent['id'],)).fetchone() else 'Referral code applied.','success')
+            return redirect(url_for('cart'))
         subtotal=0
         for key,quantity in session.get('cart',{}).items():
             product=db().execute('SELECT price FROM products WHERE id=? AND active=1',(key,)).fetchone()
@@ -436,7 +461,7 @@ def register_ecosystem(app, db, admin_only):
                 subtotal+=product['price']*quantity
         old=session.get('coupon');session['coupon']=code
         try:
-            coupon_for_checkout(db(),subtotal);flash('Promotion applied.','success')
+            coupon_for_checkout(db(),subtotal);session.pop('checkout_key',None);flash('Promotion applied. This replaces the champion buyer discount; discounts do not stack.','success')
         except ValueError as error:
             if old:
                 session['coupon']=old
@@ -556,6 +581,8 @@ def register_ecosystem(app, db, admin_only):
         if not agent:
             abort(404)
         session['referral'],session['referral_at'] = agent['code'],time.time()
+        if db().execute('SELECT 1 FROM agent_phone_accounts WHERE agent_id=?',(agent['id'],)).fetchone():
+            session.pop('coupon',None);session.pop('checkout_key',None)
         return redirect(url_for('shop'))
 
     @bp.route('/track',methods=['GET','POST'])
@@ -575,8 +602,13 @@ def register_ecosystem(app, db, admin_only):
             flash('We could not match those details. Check the reference, email and last four phone digits.','error')
         return render_template('track.html',title='Track your order',limited=False)
 
+    champion_rewards.register(bp, db, admin_only, audit)
+    agent_phone_login = agent_registration.register_agent_registration(bp, db, throttled, failure, audit)
+
     @bp.route('/agent/login',methods=['GET','POST'])
     def agent_login():
+        if request.method == 'POST' and 'pin' in request.form:
+            return agent_phone_login()
         if request.method == 'POST':
             key='agent:'+(request.remote_addr or 'unknown')
             if throttled(key):
@@ -617,11 +649,19 @@ def register_ecosystem(app, db, admin_only):
     @agent_only
     def agent_portal(agent):
         # No customer contact details or receipt tokens are exposed to agents.
-        sales=db().execute('SELECT o.id,o.created_at,o.subtotal,e.discount,o.status,COALESCE(c.target,0) AS commission FROM orders o JOIN order_extra e ON e.order_id=o.id LEFT JOIN commission_snapshots c ON c.order_id=o.id WHERE e.agent_id=? ORDER BY o.id DESC LIMIT 200',(agent['id'],)).fetchall()
-        ledger=db().execute('SELECT * FROM commission_ledger WHERE agent_id=? ORDER BY id DESC LIMIT 200',(agent['id'],)).fetchall()
+        sales=db().execute('SELECT o.id,o.created_at,o.subtotal,e.discount,e.payment_test,o.status,COALESCE(t.amount,c.target,0) AS commission FROM orders o JOIN order_extra e ON e.order_id=o.id LEFT JOIN commission_snapshots c ON c.order_id=o.id LEFT JOIN champion_test_credits t ON t.order_id=o.id WHERE e.agent_id=? ORDER BY o.id DESC LIMIT 200',(agent['id'],)).fetchall()
+        ledger=db().execute('''SELECT created_at,kind,reference,amount,0 AS is_test FROM commission_ledger WHERE agent_id=?
+            UNION ALL
+            SELECT o.created_at,'Simulated purchase credit','ISZ-' || printf('%05d',o.id),t.amount,1 AS is_test
+            FROM champion_test_credits t JOIN orders o ON o.id=t.order_id
+            WHERE t.agent_id=? AND t.amount>0
+            UNION ALL
+            SELECT created_at,'Simulated payout',reference,-amount,1 AS is_test
+            FROM champion_test_payouts WHERE agent_id=?
+            ORDER BY 1 DESC,3 DESC LIMIT 200''',(agent['id'],agent['id'],agent['id'])).fetchall()
         totals=db().execute("SELECT COALESCE(SUM(CASE WHEN kind!='Payout' THEN amount ELSE 0 END),0) AS earned, COALESCE(-SUM(CASE WHEN kind='Payout' THEN amount ELSE 0 END),0) AS paid, COALESCE(SUM(amount),0) AS balance FROM commission_ledger WHERE agent_id=?",(agent['id'],)).fetchone()
         link=(public_base() or request.host_url.rstrip('/'))+url_for('eco.referral',code=agent['code'])
-        return render_template('agent_portal.html',agent=agent,sales=sales,ledger=ledger,totals=totals,link=link,title='Agent portal')
+        return render_template('agent_portal.html',agent=agent,sales=sales,ledger=ledger,totals=totals,link=link,rewards=champion_rewards.portal_context(db(),agent['id']),title='Product champion portal')
 
     @bp.route('/owner/agents',methods=['GET','POST'])
     @admin_only
@@ -639,8 +679,12 @@ def register_ecosystem(app, db, admin_only):
                 return render_template('agent_invite.html',invite=invite,code=code,title='Agent invitation')
             except (ValueError,sqlite3.IntegrityError) as error:
                 db().rollback();flash(str(error) if isinstance(error,ValueError) else 'That agent code is already in use.','error')
-        agents=db().execute('SELECT a.*,COALESCE((SELECT SUM(l.amount) FROM commission_ledger l WHERE l.agent_id=a.id),0) AS balance FROM agents a ORDER BY a.id DESC').fetchall()
-        return render_template('owner_agents.html',agents=agents,title='Sales agents')
+        agents=db().execute('SELECT a.*,p.phone AS application_phone,p.code_issued_at,s.status AS registration_sms,COALESCE((SELECT SUM(l.amount) FROM commission_ledger l WHERE l.agent_id=a.id),0) AS balance FROM agents a LEFT JOIN agent_phone_accounts p ON p.agent_id=a.id LEFT JOIN champion_sms s ON s.agent_id=a.id ORDER BY a.approved,a.id DESC').fetchall()
+        # Keep copied links public even while the owner is testing on localhost.
+        share_base=public_base() or 'https://isazi-herbal-shop-client-portal.onrender.com'
+        registration_url=share_base+url_for('eco.agent_register')
+        return render_template('owner_agents.html',agents=agents,champion_default_rate=champion_rewards.default_rate(db()),
+            registration_url=registration_url,title='Champions')
 
     @bp.post('/owner/agents/<int:agent_id>')
     @admin_only
@@ -649,9 +693,12 @@ def register_ecosystem(app, db, admin_only):
             abort(404)
         try:
             rate=gateway.cents(request.form.get('rate',''))
-            if rate>10000:
+            if not 0<=rate<=10000:
                 raise ValueError('Commission must be between 0% and 100%.')
-            db().execute('UPDATE agents SET approved=?,rate_bps=? WHERE id=?',(1 if request.form.get('approved') else 0,rate,agent_id))
+            approved = 1 if request.form.get('approved') else 0
+            if approved:
+                agent_registration.issue_code(db(), agent_id)
+            db().execute('UPDATE agents SET auth_version=auth_version+CASE WHEN approved!=? THEN 1 ELSE 0 END,approved=?,rate_bps=? WHERE id=?',(approved,approved,rate,agent_id))
             audit(db(),'Agent updated',agent_id);db().commit();flash('Agent updated. The rate applies to new orders only.','success')
         except ValueError as error:
             flash(str(error),'error')
@@ -671,6 +718,7 @@ def register_ecosystem(app, db, admin_only):
     @bp.route('/owner/commissions',methods=['GET','POST'])
     @admin_only
     def owner_commissions():
+        testing_mode=bool(app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED'))
         if request.method=='POST':
             connection=db()
             try:
@@ -678,21 +726,45 @@ def register_ecosystem(app, db, admin_only):
                 if amount<=0 or not 3<=len(reference)<=180:
                     raise ValueError('Enter a positive payout amount and the external payment reference.')
                 connection.execute('BEGIN IMMEDIATE')
-                balance=connection.execute('SELECT COALESCE(SUM(amount),0) FROM commission_ledger WHERE agent_id=?',(agent_id,)).fetchone()[0]
+                payout_mode=request.form.get('payout_mode','real')
+                if payout_mode not in ('test','real') or (payout_mode=='test' and not testing_mode):
+                    raise ValueError('Simulated payouts require payment test mode to be enabled.')
+                if not connection.execute('SELECT 1 FROM agents WHERE id=?',(agent_id,)).fetchone():
+                    raise ValueError('Select an existing champion.')
+                balance=(champion_rewards.test_totals(connection,agent_id)['test_balance'] if payout_mode=='test' else
+                    connection.execute('SELECT COALESCE(SUM(amount),0) FROM commission_ledger WHERE agent_id=?',(agent_id,)).fetchone()[0])
                 if amount>balance:
                     raise ValueError('Payout exceeds the available commission balance.')
                 event_key=request.form.get('event_key','')
-                if not secrets.compare_digest(event_key,session.get('payout_key','')):
+                if not event_key or not session.get('payout_key') or not secrets.compare_digest(event_key,session['payout_key']):
                     raise ValueError('This payout form expired. Reload and try again.')
-                connection.execute('INSERT INTO commission_ledger(agent_id,amount,kind,reference,event_key) VALUES(?,?,?,?,?)',(agent_id,-amount,'Payout',reference,'payout:'+event_key))
-                audit(connection,'Commission payout recorded',agent_id,reference);connection.commit();session.pop('payout_key',None);flash('Completed payout recorded. This app did not transfer money.','success')
+                if payout_mode=='test':
+                    connection.execute('INSERT INTO champion_test_payouts(agent_id,amount,reference,event_key) VALUES(?,?,?,?)',(agent_id,amount,reference,'test-payout:'+event_key))
+                else:
+                    connection.execute('INSERT INTO commission_ledger(agent_id,amount,kind,reference,event_key) VALUES(?,?,?,?,?)',(agent_id,-amount,'Payout',reference,'payout:'+event_key))
+                audit(connection,'TEST champion payout recorded' if payout_mode=='test' else 'Commission payout recorded',agent_id,reference)
+                connection.commit();session.pop('payout_key',None)
+                flash('TEST payout recorded. Simulated balance updated; no money transferred.' if payout_mode=='test' else 'Completed payout recorded. This app did not transfer money.','success')
                 return redirect(url_for('eco.owner_commissions'))
             except (ValueError,sqlite3.IntegrityError) as error:
                 connection.rollback();flash(str(error) if isinstance(error,ValueError) else 'This payout was already recorded.','error')
         session.setdefault('payout_key',secrets.token_hex(24))
-        agents=db().execute("SELECT a.id,a.name,a.code,COALESCE(SUM(l.amount),0) AS balance FROM agents a LEFT JOIN commission_ledger l ON a.id=l.agent_id GROUP BY a.id ORDER BY a.name").fetchall()
-        ledger=db().execute('SELECT l.*,a.code FROM commission_ledger l JOIN agents a ON a.id=l.agent_id ORDER BY l.id DESC LIMIT 300').fetchall()
-        return render_template('owner_commissions.html',agents=agents,ledger=ledger,title='Commission ledger')
+        agents=db().execute("""SELECT a.id,a.name,a.code,
+            COALESCE((SELECT SUM(l.amount) FROM commission_ledger l WHERE l.agent_id=a.id),0) AS balance,
+            COALESCE((SELECT SUM(t.amount) FROM champion_test_credits t WHERE t.agent_id=a.id),0) - COALESCE((SELECT SUM(p.amount) FROM champion_test_payouts p WHERE p.agent_id=a.id),0) AS test_balance
+            FROM agents a ORDER BY a.name""").fetchall()
+        ledger=db().execute("""SELECT l.created_at,a.code,l.kind,l.reference,l.amount,0 AS is_test
+            FROM commission_ledger l JOIN agents a ON a.id=l.agent_id
+            UNION ALL
+            SELECT o.created_at,a.code,'Simulated purchase credit','ISZ-' || printf('%05d',o.id),t.amount,1 AS is_test
+            FROM champion_test_credits t JOIN agents a ON a.id=t.agent_id JOIN orders o ON o.id=t.order_id
+            WHERE t.amount>0
+            UNION ALL
+            SELECT p.created_at,a.code,'Simulated payout',p.reference,-p.amount,1 AS is_test
+            FROM champion_test_payouts p JOIN agents a ON a.id=p.agent_id
+            ORDER BY 1 DESC,4 DESC LIMIT 300""").fetchall()
+        testing_mode=bool(app.config.get('DEMO_MODE') or app.config.get('DEMO_PAYMENTS_ENABLED'))
+        return render_template('owner_commissions.html',agents=agents,ledger=ledger,testing_mode=testing_mode,title='Commission ledger')
 
     @bp.route('/owner/customers',methods=['GET','POST'])
     @admin_only
