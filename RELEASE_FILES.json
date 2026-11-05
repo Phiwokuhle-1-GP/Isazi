@@ -929,7 +929,7 @@
   },
   {
     "path": "templates/base.html",
-    "sha256": "2a3c07468722b0af455f8242bde0c41033a844a04ad0f3de6c9bc0cc0d9a0693"
+    "sha256": "c1ce30893f00dc49437faab3de4e9029022405c4a36e7c1f824e93b0c054b76e"
   },
   {
     "path": "templates/cart.html",
