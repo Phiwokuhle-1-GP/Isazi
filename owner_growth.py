@@ -38,8 +38,19 @@ def register_owner_growth(app, db, admin_only):
         endpoint = request.endpoint
         if session.get('admin') or request.headers.get('DNT') == '1':
             return response
-        ua = request.user_agent.string.lower()
-        if any(word in ua for word in ('bot', 'spider', 'crawler', 'lighthouse')):
+        ua = request.user_agent.string.strip().lower()
+        # Exclude identifiable automated clients and speculative browser requests.
+        # A browser-like user agent can still be spoofed; this is not bot verification.
+        automated = ('bot', 'spider', 'crawler', 'lighthouse', 'headlesschrome',
+                     'phantomjs', 'selenium', 'playwright', 'puppeteer',
+                     'curl/', 'wget/', 'python-requests/', 'python-urllib/',
+                     'aiohttp/', 'httpx/', 'go-http-client/', 'java/',
+                     'postmanruntime/', 'uptimerobot', 'pingdom', 'statuscake',
+                     'facebookexternalhit/', 'telegrambot', 'slackbot')
+        purpose = (request.headers.get('Purpose', '') + ' ' +
+                   request.headers.get('Sec-Purpose', '') + ' ' +
+                   request.headers.get('X-Purpose', '')).lower()
+        if not ua or any(word in ua for word in automated) or 'prefetch' in purpose or 'prerender' in purpose:
             return response
         event = None
         if request.method == 'GET' and response.status_code == 200:
