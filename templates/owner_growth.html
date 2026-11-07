@@ -15,28 +15,12 @@
   <p>Recorded public page views · UTC calendar dates · Up to 180 days of stored history</p>
   <div class="owner-filters"><label>Chart <select id="traffic-chart-type"><option value="line">Line</option><option value="bar">Bar</option></select></label><label><input id="traffic-labels" type="checkbox"> Data labels</label></div>
   <p>Total page views: <strong>{{ growth.pageviews }}</strong> &nbsp; · &nbsp; Daily average: <strong>{{ '%.1f'|format(growth.pageviews / growth.days) }}</strong> &nbsp; · &nbsp; Peak day: <strong>{% if growth.pageviews %}{{ growth.traffic_peak[0] }} ({{ growth.traffic_peak[1] }}){% else %}No recorded views{% endif %}</strong></p>
-  <svg id="traffic-chart" viewBox="0 0 900 300" role="img" aria-label="Daily public page views. Exact counts are available in the table below." style="display:block;width:100%;height:auto;min-height:180px"></svg>
+  <svg id="traffic-chart" class="growth-chart" viewBox="0 0 900 300" role="img" aria-label="Daily public page views. Exact counts are available in the table below." data-traffic="{{ growth.page_trends|tojson|forceescape }}"><path d="M45 40V260H885" stroke="#dce5df" fill="none"/><polyline points="{{ growth.page_points }}" fill="none" stroke="#b59253" stroke-width="3"/></svg>
   <div class="owner-chart-labels"><small>{{ growth.start }}</small><small>{{ growth.end }}</small></div>
   <details><summary>View daily page views</summary><div class="table-wrap"><table><tr><th>Date (UTC)</th><th>Page views</th></tr>{% for day,count in growth.page_trends %}<tr><td>{{ day }}</td><td>{{ count }}</td></tr>{% endfor %}</table></div></details>
   <p class="growth-note">Use the period and scope filters above. Counts include repeated views on recorded public pages and exclude owner sessions, known bots and Do Not Track requests. Tracking started {{ growth.started }} UTC; earlier visits cannot be recovered. Zero means no recorded views.</p>
 </section>
-<script type="application/json" id="traffic-chart-data">{{ growth.page_trends|tojson }}</script>
-<script>
-(function () {
-  const data = JSON.parse(document.getElementById('traffic-chart-data').textContent);
-  const svg = document.getElementById('traffic-chart'), type = document.getElementById('traffic-chart-type'), labels = document.getElementById('traffic-labels');
-  const ns = 'http://www.w3.org/2000/svg', max = Math.max(1, ...data.map(row => row[1]));
-  function add(tag, attrs, content) { const node = document.createElementNS(ns, tag); Object.entries(attrs).forEach(([key,value]) => node.setAttribute(key,value)); if (content !== undefined) node.textContent=content; svg.appendChild(node); return node; }
-  function draw() {
-    svg.replaceChildren();
-    for (let i=0;i<=4;i++) { const y=260-i*55; add('line',{x1:45,x2:885,y1:y,y2:y,stroke:'#e1e7e5'}); add('text',{x:38,y:y+4,'text-anchor':'end',fill:'#62736c','font-size':12},String(Math.round(max*i/4))); }
-    const step=820/Math.max(1,data.length-1); const points=data.map((r,i)=>[50+i*step,260-r[1]/max*220]);
-    if(type.value==='line') add('polyline',{points:points.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#b59253','stroke-width':3});
-    data.forEach((r,i)=>{ const [x,y]=points[i]; if(type.value==='bar') add('rect',{x:x-Math.min(10,step*.35),y:y,width:Math.min(20,step*.7),height:260-y,fill:'#b59253'}); else add('circle',{cx:x,cy:y,r:3,fill:'#b59253'}); if(labels.checked) add('text',{x:x,y:Math.max(12,y-7),'text-anchor':'middle',fill:'#314b40','font-size':10},String(r[1])); });
-  }
-  type.addEventListener('change',draw); labels.addEventListener('change',draw); draw();
-})();
-</script>
+<script src="{{ url_for('static',filename='owner-traffic-chart.js',v='1') }}" defer></script>
 
 <section class="panel"><h2>Device mix</h2>{% for label,count in growth.devices %}<div class="growth-bar"><span>{{ label }}</span><meter min="0" max="{{ growth.visitors or 1 }}" value="{{ count }}">{{ count }}</meter><b>{{ count }}</b></div>{% else %}<p>No traffic data yet.</p>{% endfor %}<h2>Browser mix</h2>{% for label,count in growth.browsers %}<div class="growth-bar"><span>{{ label }}</span><meter min="0" max="{{ growth.visitors or 1 }}" value="{{ count }}">{{ count }}</meter><b>{{ count }}</b></div>{% endfor %}</section></div>
 <div class="growth-grid equal"><section class="panel"><h2>Shopping journey</h2>{% for label,count in growth.funnel %}<div class="growth-bar"><span>{{ label }}</span><meter min="0" max="{{ [growth.visitors,count,1]|max }}" value="{{ count }}">{{ count }}</meter><b>{{ count }}</b></div>{% endfor %}<div class="total-line"><span>Confirmed orders in period</span><b>{{ growth.confirmed|length }}</b></div><p class="growth-note">Stages count distinct measured browser IDs independently, not a cohort conversion funnel. Orders come from saved records, including tests. Untracked visitors and earlier journeys can make counts differ.</p></section>

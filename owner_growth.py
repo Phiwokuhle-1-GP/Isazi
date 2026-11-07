@@ -133,6 +133,8 @@ def register_owner_growth(app, db, admin_only):
             trends.append((day, len({e['visitor'] for e in traffic if e['day']==day})))
         page_trends = [(day, sum(e['hits'] for e in traffic if e['day'] == day)) for day, _ in trends]
         traffic_peak = max(page_trends, key=lambda row: row[1])
+        page_max = max([v for _, v in page_trends] + [1])
+        page_points = ' '.join(f'{50+i*820/max(1,days-1):.1f},{260-v/page_max*220:.1f}' for i,(_,v) in enumerate(page_trends))
         peak = max([v for _,v in trends]+[1])
         points = ' '.join(f'{20+i*660/max(1,days-1):.1f},{160-v/peak*135:.1f}' for i,(_,v) in enumerate(trends))
         def grouped(key):
@@ -151,7 +153,7 @@ def register_owner_growth(app, db, admin_only):
         return dict(scope=scope,days=days,start=dates[0],end=dates[1],orders=orders,confirmed=confirmed,
                     sales=sales,real_sales=real_sales,test_sales=sales-real_sales,pending=pending,pep_pending=pep_pending,
                     dispatch=dispatch,stocks=stocks,visitors=len(visitors),pageviews=sum(e['hits'] for e in traffic),
-                    aov=sales//len(confirmed) if confirmed else 0,trends=trends,points=points,page_trends=page_trends,traffic_peak=traffic_peak,
+                    aov=sales//len(confirmed) if confirmed else 0,trends=trends,points=points,page_trends=page_trends,traffic_peak=traffic_peak,page_points=page_points,
                     devices=grouped('device'),sources=grouped('source'),browsers=grouped('browser'),
                     funnel=funnel,top=top,started=db().execute("SELECT value FROM growth_meta WHERE key='started_at'").fetchone()[0])
 
