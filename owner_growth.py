@@ -137,6 +137,22 @@ def register_owner_growth(app, db, admin_only):
             event_sql += ' AND scope=?'; event_values.append(scope)
         events = db().execute(event_sql, event_values).fetchall()
         traffic = [e for e in events if e['event'] in ('page_view','product_view')]
+
+        # Stored analytics use endpoint names and product IDs, not full URLs.
+        # Sum hits so repeat page views are included; keep scope and dates above.
+        page_paths = {'home':'/', 'shop':'/shop', 'about':'/about',
+                      'contact':'/contact', 'tips':'/health-tips',
+                      'testimonials':'/testimonials', 'cart':'/cart'}
+        page_counts = {}
+        for event in traffic:
+            key = event['page']
+            if key.startswith('product:') and key[8:].isdigit():
+                label = '/product/' + key[8:]
+            else:
+                label = page_paths.get(key, key)
+            page_counts[label] = page_counts.get(label, 0) + event['hits']
+        top_pages = sorted(page_counts.items(), key=lambda item: (-item[1], item[0]))[:10]
+
         visitors = {e['visitor'] for e in traffic}
         trends = []
         for i in range(days):
@@ -163,7 +179,7 @@ def register_owner_growth(app, db, admin_only):
                              ('stock<5' if scope=='real' else 'presentation_stock<5' if scope=='test' else '(stock<5 OR presentation_stock<5)')+' ORDER BY name').fetchall()
         return dict(scope=scope,days=days,start=dates[0],end=dates[1],orders=orders,confirmed=confirmed,
                     sales=sales,real_sales=real_sales,test_sales=sales-real_sales,pending=pending,pep_pending=pep_pending,
-                    dispatch=dispatch,stocks=stocks,visitors=len(visitors),pageviews=sum(e['hits'] for e in traffic),
+                    dispatch=dispatch,stocks=stocks,visitors=len(visitors),pageviews=sum(e['hits'] for e in traffic),top_pages=top_pages,
                     aov=sales//len(confirmed) if confirmed else 0,trends=trends,points=points,page_trends=page_trends,traffic_peak=traffic_peak,page_points=page_points,
                     devices=grouped('device'),sources=grouped('source'),browsers=grouped('browser'),
                     funnel=funnel,top=top,started=db().execute("SELECT value FROM growth_meta WHERE key='started_at'").fetchone()[0])
