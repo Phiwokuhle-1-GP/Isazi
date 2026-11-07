@@ -27,8 +27,13 @@
     if(type.value==='line') add('polyline',{points:points.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#b59253','stroke-width':3});
     data.forEach((r,i)=>{
       const [x,y]=points[i];
-      if(type.value==='bar') add('rect',{x:x-Math.min(10,step*.35),y:y,width:Math.min(20,step*.7),height:260-y,fill:'#b59253'});
-      else add('circle',{cx:x,cy:y,r:3,fill:'#b59253'});
+      const hit = document.createElementNS(ns, type.value==='bar' ? 'rect' : 'circle');
+      const attributes = type.value==='bar' ? {x:x-Math.min(10,step*.35),y:y,width:Math.min(20,step*.7),height:Math.max(1,260-y),fill:'#b59253'} : {cx:x,cy:y,r:5,fill:'#b59253'};
+      Object.entries(attributes).forEach(([key,value]) => hit.setAttribute(key,value));
+      const title = document.createElementNS(ns, 'title');
+      title.textContent = String(r[0]) + ' — Page views: ' + String(r[1]);
+      hit.appendChild(title);
+      svg.appendChild(hit);
       if(labels.checked) add('text',{x:x,y:Math.max(12,y-7),'text-anchor':'middle',fill:'#314b40','font-size':10},String(r[1]));
     });
   }
