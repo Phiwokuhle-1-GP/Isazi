@@ -20,7 +20,7 @@
     for (let i=0;i<=4;i++) {
       const y=260-i*55;
       add('line',{x1:45,x2:885,y1:y,y2:y,stroke:'#e1e7e5'});
-      add('text',{x:38,y:y+4,'text-anchor':'end',fill:'#62736c','font-size':12},String(Math.round(max*i/4)));
+      add('text',{x:38,y:y+4,'text-anchor':'end',fill:'#40594e','font-size':14,'font-weight':'700'},String(Math.round(max*i/4)));
     }
     const step=820/Math.max(1,data.length-1);
     const points=data.map((r,i)=>[50+i*step,260-(Number(r[1])||0)/max*220]);
@@ -31,7 +31,7 @@
       const i = tickCount === 1 ? 0 : Math.round(tick * (data.length-1) / (tickCount-1));
       const x = 50 + i*step;
       add('line', {x1:x,x2:x,y1:260,y2:265,stroke:'#a4b2aa'});
-      add('text', {x:x,y:282,'text-anchor':i===0?'start':i===data.length-1?'end':'middle',fill:'#62736c','font-size':11}, String(data[i][0]));
+      add('text', {x:x,y:282,'text-anchor':i===0?'start':i===data.length-1?'end':'middle',fill:'#40594e','font-size':12,'font-weight':'700'}, String(data[i][0]));
     }
 
     if(type.value==='line') add('polyline',{points:points.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#b59253','stroke-width':3});
@@ -44,7 +44,7 @@
       title.textContent = String(r[0]) + ' — Page views: ' + String(r[1]);
       hit.appendChild(title);
       svg.appendChild(hit);
-      if(labels.checked) add('text',{x:x,y:Math.max(12,y-7),'text-anchor':'middle',fill:'#314b40','font-size':10},String(r[1]));
+      if(labels.checked) add('text',{x:x,y:Math.max(12,y-7),'text-anchor':'middle',fill:'#233d32','font-size':12,'font-weight':'700'},String(r[1]));
     });
   }
   type.addEventListener('change',draw);
