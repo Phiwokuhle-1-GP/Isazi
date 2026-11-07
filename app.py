@@ -941,7 +941,20 @@ def create_app(test_config=None):
     @app.get('/robots.txt')
     def robots():
         # Private transactional and owner pages should never be indexed.
-        return Response('User-agent: *\nDisallow: /owner\nDisallow: /cart\nDisallow: /checkout\nDisallow: /order/\nDisallow: /account\nDisallow: /agent\nDisallow: /track\nDisallow: /pay/\n', mimetype='text/plain')
+        return Response('User-agent: *\nDisallow: /owner\nDisallow: /cart\nDisallow: /checkout\nDisallow: /order/\nDisallow: /account\nDisallow: /agent\nDisallow: /track\nDisallow: /pay/\nSitemap: https://isaziherbalshop.com/sitemap.xml\n', mimetype='text/plain')
+
+    @app.get('/sitemap.xml')
+    def sitemap():
+        from xml.sax.saxutils import escape
+        # Use the verified public domain; never derive canonical URLs from Host headers.
+        origin = 'https://isaziherbalshop.com'
+        paths = ['/', '/shop', '/about', '/health-tips', '/contact']
+        paths.extend('/product/' + str(row['id']) for row in db().execute(
+            'SELECT id FROM products WHERE active=1 ORDER BY id').fetchall())
+        body = '<?xml version="1.0" encoding="UTF-8"?>' + \
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + \
+            ''.join('<url><loc>' + escape(origin + path) + '</loc></url>' for path in paths) + '</urlset>'
+        return Response(body, mimetype='application/xml')
 
     @app.get('/health')
     def health():
