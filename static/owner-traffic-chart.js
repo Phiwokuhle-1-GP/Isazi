@@ -24,6 +24,16 @@
     }
     const step=820/Math.max(1,data.length-1);
     const points=data.map((r,i)=>[50+i*step,260-(Number(r[1])||0)/max*220]);
+
+    // traffic-date-labels: spread up to seven UTC dates across the axis.
+    const tickCount = Math.min(7, data.length);
+    for (let tick = 0; tick < tickCount; tick++) {
+      const i = tickCount === 1 ? 0 : Math.round(tick * (data.length-1) / (tickCount-1));
+      const x = 50 + i*step;
+      add('line', {x1:x,x2:x,y1:260,y2:265,stroke:'#a4b2aa'});
+      add('text', {x:x,y:282,'text-anchor':i===0?'start':i===data.length-1?'end':'middle',fill:'#62736c','font-size':11}, String(data[i][0]));
+    }
+
     if(type.value==='line') add('polyline',{points:points.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#b59253','stroke-width':3});
     data.forEach((r,i)=>{
       const [x,y]=points[i];
