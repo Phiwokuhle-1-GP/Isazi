@@ -1,4 +1,5 @@
 """Exercise real checkout handlers and owner views against disposable databases."""
+from contextlib import closing
 import sqlite3
 import unittest
 import test_checkout_journey
@@ -9,7 +10,7 @@ class OwnerGrowthTests(unittest.TestCase):
         self.shop = test_checkout_journey.CheckoutJourneyTests()
         self.shop.setUp()
         self.app, self.client = self.shop.app, self.shop.client
-        with sqlite3.connect(self.shop.db_path) as db:
+        with closing(sqlite3.connect(self.shop.db_path)) as db, db:
             db.execute('DELETE FROM growth_events')
 
     def tearDown(self):
@@ -75,7 +76,7 @@ class OwnerGrowthTests(unittest.TestCase):
     def test_traffic_uses_cookie_without_pii_and_honours_exclusions(self):
         self.client.get('/product/1?phone=0601234567',headers={'User-Agent':'Mozilla Chrome/120 Mobile','Referer':'https://www.tiktok.com/campaign?email=private@example.com'})
         self.client.get('/product/1')
-        with sqlite3.connect(self.shop.db_path) as db:
+        with closing(sqlite3.connect(self.shop.db_path)) as db, db:
             rows=db.execute('SELECT event,page,scope,hits FROM growth_events WHERE event="product_view"').fetchall()
             self.assertEqual(rows,[('product_view','product:1','test',2)])
             text=str(db.execute('SELECT * FROM growth_events').fetchall())
@@ -86,7 +87,7 @@ class OwnerGrowthTests(unittest.TestCase):
         self.client.get('/',headers={'User-Agent':'Googlebot'})
         self.shop.owner()
         self.client.get('/')
-        with sqlite3.connect(self.shop.db_path) as db:
+        with closing(sqlite3.connect(self.shop.db_path)) as db, db:
             self.assertEqual(db.execute('SELECT SUM(hits) FROM growth_events').fetchone()[0],count)
         self.assertEqual(self.data('real')['visitors'],0)
         self.assertGreaterEqual(self.data('test')['visitors'],1)
@@ -105,14 +106,14 @@ class OwnerGrowthTests(unittest.TestCase):
         self.assertNotIn('0601234567',response.text)
 
     def test_stock_scope_and_cancelled_orders(self):
-        with sqlite3.connect(self.shop.db_path) as db:
+        with closing(sqlite3.connect(self.shop.db_path)) as db, db:
             db.execute('UPDATE products SET stock=20,presentation_stock=20')
             db.execute('UPDATE products SET presentation_stock=2 WHERE id=1')
             db.execute('UPDATE products SET stock=1 WHERE id=2')
         self.shop.set_up_new_client('card')
         response=self.shop.order()
         self.shop.post(response.location+'/complete')
-        with sqlite3.connect(self.shop.db_path) as db:
+        with closing(sqlite3.connect(self.shop.db_path)) as db, db:
             db.execute("UPDATE orders SET status='Cancelled'")
         self.shop.owner()
         self.assertEqual(self.data()['sales'],0)
